@@ -14,7 +14,8 @@
  * permissions and limitations under the License.
  */
 
-package edu.umd.cloud9.example.simple;
+// package edu.umd.cloud9.example.simple;
+package src;
 
 import java.io.IOException;
 import java.util.Iterator;
