@@ -24,3 +24,12 @@ After word regex cleanup:
 
 * Question 6. How many unique terms are there?
 * 31,940 terms
+
+Grading
+=======
+
+Your answers are correct. However, I was unable to run your job due to class not found exceptions.
+
+Please be careful next time.
+
+-Jimmy
