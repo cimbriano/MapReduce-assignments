@@ -3,3 +3,6 @@ dist/
 docs/
 etc/*.sh
 lib/
+
+# JUnit Output Directory
+test/
