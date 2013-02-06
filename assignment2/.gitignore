@@ -6,3 +6,9 @@ lib/
 
 # JUnit Output Directory
 test/
+
+# Data on Local FS
+data/
+
+# Word/Bigram Count output directory
+wc/
