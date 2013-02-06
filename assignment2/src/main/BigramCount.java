@@ -35,7 +35,7 @@ public class BigramCount extends Configured implements Tool {
 
     // Reuse objects to save overhead of object creation.
     private final static IntWritable ONE = new IntWritable(1);
-    private final static Text WORD = new Text();
+    private final static Text BIGRAM = new Text();
 
     @Override
     public void map(LongWritable key, Text value, Context context)
@@ -45,9 +45,17 @@ public class BigramCount extends Configured implements Tool {
       
       String first = "";
       String second = "";
+      if(itr.hasMoreTokens()){
+        first = itr.nextToken();
+      }
+
       while (itr.hasMoreTokens()) {
-        WORD.set(itr.nextToken());
-        context.write(WORD, ONE);
+        second = itr.nextToken();
+
+        BIGRAM.set(first + ' ' + second);
+        context.write(BIGRAM, ONE);
+
+        first = second;
       }
     }
   }
