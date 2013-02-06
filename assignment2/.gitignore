@@ -12,3 +12,6 @@ data/
 
 # Word/Bigram Count output directory
 wc/
+
+# zsh ant plugin
+.ant_targets
