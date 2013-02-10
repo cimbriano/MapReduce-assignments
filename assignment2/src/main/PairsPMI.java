@@ -24,6 +24,7 @@ import org.apache.hadoop.util.ToolRunner;
 import org.apache.log4j.Logger;
 
 import cern.colt.Arrays;
+import edu.umd.cloud9.io.triple.TripleOfInts;
 
 
 public class PairsPMI extends Configured implements Tool {
@@ -64,12 +65,12 @@ public class PairsPMI extends Configured implements Tool {
   
   // Second stage mapper: Maps (A, TOTAL_A), (B, TOTAL_B) and (A_B, TOTAL_A_B) to the same reducer 
   //                via a common key 
-  private static class TotalsMapper extends Mapper<LongWritable, Text, Text, IntWritable> {
+  private static class TotalsMapper extends Mapper<LongWritable, Text, Text, TripleOfInts> {
     
   }
   
   // Second Stage reducer: Finalizes PMI Calculation given 
-  private static class TotalsReducer extends Reducer<Text, IntWritable, Text, IntWritable> {
+  private static class TotalsReducer extends Reducer<Text, TripleOfInts, Text, FloatWritable> {
     
   }
   
