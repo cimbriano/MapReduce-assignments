@@ -1,3 +1,5 @@
+import java.io.IOException;
+
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.GnuParser;
@@ -31,15 +33,35 @@ public class PairsPMI extends Configured implements Tool {
   // Mapper: emits ... 
   private static class MyMapper extends Mapper<LongWritable, Text, Text, IntWritable> {
 
+    // Objects for reuse
+    private final static IntWritable ONE = new IntWritable(1);
+    private final static Text KEY = new Text();
+
+    @Override
+    public void map(LongWritable key, Text value, Context context)
+         throws IOException, InterruptedException{
+
+      KEY.set(value.toString());
+      // Emit once per input just to count input size
+      context.write(KEY, ONE);
+    }
   }
 
   // Reducer: description ...
   private static class MyReducer extends Reducer<Text, IntWritable, Text, IntWritable> {
+    // Reuse objects
+    private final static IntWritable SUM = new IntWritable();
 
+    @Override
+    public void reduce(Text key, Iterable<IntWritable> values, Context context)
+        throws IOException, InterruptedException{
+
+    }
   }
 
 
   public PairsPMI() {}
+
   private static final String INPUT = "input";
   private static final String OUTPUT = "output";
   private static final String NUM_REDUCERS = "numReducers";
