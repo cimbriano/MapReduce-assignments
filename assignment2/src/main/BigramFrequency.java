@@ -47,7 +47,6 @@ public class BigramFrequency extends Configured implements Tool {
 
   @SuppressWarnings("static-access")
   public int run(String[] args) throws Exception {
-    // TODO Auto-generated method stub
     Options options = new Options();
     
     options.addOption(OptionBuilder.withArgName("path").hasArg()
