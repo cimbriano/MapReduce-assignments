@@ -1,5 +1,12 @@
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
 
@@ -12,9 +19,10 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
+import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.FloatWritable;
+import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
@@ -30,7 +38,6 @@ import org.apache.log4j.Logger;
 
 import cern.colt.Arrays;
 import edu.umd.cloud9.io.pair.PairOfStrings;
-import edu.umd.cloud9.io.triple.TripleOfInts;
 
 
 public class PairsPMI extends Configured implements Tool {
@@ -73,8 +80,6 @@ public class PairsPMI extends Configured implements Tool {
     @Override
     public void reduce(Text key, Iterable<IntWritable> values, Context context)
         throws IOException, InterruptedException{
-      
-      
       int sum = 0;
       for(IntWritable value : values){
         sum += value.get();
@@ -82,7 +87,6 @@ public class PairsPMI extends Configured implements Tool {
       
       SUM.set(sum);
       context.write(key, SUM);
-
     }
   }
   
@@ -92,56 +96,189 @@ public class PairsPMI extends Configured implements Tool {
   //                via a common key 
   private static class PairsPMIMapper extends Mapper<LongWritable, Text, PairOfStrings, IntWritable> {
     
+//    
+//    @Override
+//    public void setup(Context context) throws IOException{
+//      Configuration conf = context.getConfiguration();
+//      FileSystem fs = FileSystem.get(conf);
+//      
+////      Path inFile = new Path(conf.get("intermediatePath"));
+//      Path inFile = new Path("/Users/chris/Projects/UMD/MapReduce-assignments/assignment2/appearance_totals_stripes/part-r-00000");
+//      if(!fs.exists(inFile)){
+//        throw new IOException("File Not Found: " + inFile.toString());
+//      }
+//      
+//      BufferedReader reader = null;
+//      try{
+//        FSDataInputStream in = fs.open(inFile);
+//        InputStreamReader inStream = new InputStreamReader(in);
+//        reader = new BufferedReader(inStream);
+//        
+//        
+//      } catch(FileNotFoundException e){
+//        LOG.info("**************** Stack Trace *******************");
+//        e.printStackTrace();
+//        LOG.info("************** File not found *******************");
+//        LOG.info(inFile);
+//        LOG.info("Get Name: " + inFile.getName());
+//        LOG.info("Get Parent: " + inFile.getParent());
+//        
+//        LOG.info("************** File System *******************");
+//        LOG.info("fs: " + fs);
+//        LOG.info("Home Directory: " + fs.getHomeDirectory());
+//        LOG.info("URI:" + fs.getUri());
+//        LOG.info("Working Directory:" + fs.getWorkingDirectory());
+//        throw new IOException("Exception thrown when trying to open file.");
+//      }
+//      
+//      String line = reader.readLine();
+//      while(line != null){
+//        line = reader.readLine();
+//      }
+//      
+//      
+//      reader.close();
+//    }
+//    
+    
+    
     // Objects for reuse
     private final static PairOfStrings PAIR = new PairOfStrings();
     private final static IntWritable ONE = new IntWritable(1);
     
     @Override
-    public void map(LongWritable key, Text value, Context context){
+    public void map(LongWritable key, Text value, Context context) 
+        throws IOException, InterruptedException{
       
-    }
-  }
-  
-  //TODO Write fill in combiner boilerplate
-  //Combiner
-  private static class PairsPMICombiner extends Reducer<PairOfStrings, IntWritable, Text, FloatWritable> {
-    
-    @Override
-    public void reduce(PairOfStrings pair, Iterable<IntWritable> values, Context context){
+      String line = value.toString();
+      StringTokenizer t = new StringTokenizer(line);
       
-    }
-  }
-  
-  // Second Stage reducer: Finalizes PMI Calculation given 
-  private static class PairsPMIReducer extends Reducer<PairOfStrings, IntWritable, Text, FloatWritable> {
-    @Override
-    public void setup(Context context){
-      //TODO Read from intermediate output of first job
-      // and build in-memory map of terms to their idividual totals
+      // Need to pass through multiple times so put tokens into array
+      List<String> terms = new ArrayList<String>();
+      while(t.hasMoreTokens()){
+        terms.add(t.nextToken());
+      }
       
+      String left = "";
+      String right = "";
+      Set<String> uniquePairs = new HashSet<String>();
       
-    }
-    
-    @Override
-    public void reduce(PairOfStrings pair, Iterable<IntWritable> values, Context context ){
-      // Recieving pair and pair counts -> Sum these for this pair's total
-      
-      // Look up individual totals for each member of pair
-      
-      // Calculate PMI emit Pair or Text as key and Float as value
-      
-    }
-    
-    @Override
-    public void cleanup(Context context){
-      //
-    }
-  }
-  
-  
-  
-  
+      for(int leftTermIndex = 0; leftTermIndex < terms.size(); leftTermIndex++){
+        for(int rightTermIndex = leftTermIndex + 1; rightTermIndex < terms.size(); rightTermIndex++) {
+          left = terms.get(leftTermIndex);
+          right = terms.get(rightTermIndex);
 
+          if(uniquePairs.add(left + " " + right)){
+            PAIR.set(left, right);
+            context.write(PAIR, ONE);
+          }
+        }
+      }
+      
+    }
+  }
+  
+//  //TODO Write fill in combiner boilerplate
+//  //Combiner
+//  private static class PairsPMICombiner extends Reducer<PairOfStrings, IntWritable, PairOfStrings, IntWritable> {
+//    private static IntWritable SUM = new IntWritable(); 
+//    
+//    
+//    @Override
+//    public void reduce(PairOfStrings pair, Iterable<IntWritable> values, Context context) 
+//        throws IOException, InterruptedException{
+//      int sum = 0;
+//      for(IntWritable value : values){
+//        sum += value.get();
+//      }
+//      SUM.set(sum);
+//      context.write(pair, SUM);
+//    }
+//  }
+
+  // Second Stage reducer: Finalizes PMI Calculation given 
+  private static class PairsPMIReducer extends Reducer<PairOfStrings, IntWritable, PairOfStrings, DoubleWritable> {
+    
+    private static Map<String, Integer> termTotals = new HashMap<String, Integer>();
+    
+    private static DoubleWritable PMI = new DoubleWritable();
+    private static double totalDocs = 156215.0;
+    
+    @Override
+    public void setup(Context context) throws IOException{
+      //TODO Read from intermediate output of first job
+      // and build in-memory map of terms to their individual totals
+      Configuration conf = context.getConfiguration();
+      FileSystem fs = FileSystem.get(conf);
+      
+//      Path inFile = new Path(conf.get("intermediatePath"));
+      Path inFile = new Path("/Users/chris/Projects/UMD/MapReduce-assignments/assignment2/appearance_totals_stripes/part-r-00000");
+
+      if(!fs.exists(inFile)){
+        throw new IOException("File Not Found: " + inFile.toString());
+      }
+      
+      BufferedReader reader = null;
+      try{
+        FSDataInputStream in = fs.open(inFile);
+        InputStreamReader inStream = new InputStreamReader(in);
+        reader = new BufferedReader(inStream);
+        
+      } catch(FileNotFoundException e){
+        throw new IOException("Exception thrown when trying to open file.");
+      }
+      
+      
+      String line = reader.readLine();
+      while(line != null){
+        
+        String[] parts = line.split("\\s+");
+        if(parts.length != 2){
+          LOG.info("Input line did not have exactly 2 tokens: '" + line + "'");
+        } else {
+          termTotals.put(parts[0], Integer.parseInt(parts[1]));
+        }
+        line = reader.readLine();
+      }
+      
+      reader.close();
+      
+    }
+    
+    @Override
+    public void reduce(PairOfStrings pair, Iterable<IntWritable> values, Context context ) 
+        throws IOException, InterruptedException{
+      // Recieving pair and pair counts -> Sum these for this pair's total
+        // Only calculate PMI for pairs that occur 10 or more times
+      
+      int pairSum = 0;
+      for(IntWritable value : values) {
+        pairSum += value.get();
+      }
+      
+      if(pairSum >= 10){
+
+        // Look up individual totals for each member of pair
+        // Calculate PMI emit Pair or Text as key and Float as value
+        String left = pair.getLeftElement();
+        String right = pair.getRightElement();
+
+        double probPair = pairSum / totalDocs;
+        double probLeft = termTotals.get(left) / totalDocs;
+        double probRight = termTotals.get(right) / totalDocs;
+
+        double pmi = Math.log(probPair / (probLeft * probRight));
+
+
+        pair.set(left + " " + termTotals.get(left), right + " " + termTotals.get(right));
+
+        PMI.set(pmi);
+        context.write(pair, PMI);
+      }
+
+    }
+
+  }
 
   public PairsPMI() {}
 
@@ -184,19 +321,21 @@ public class PairsPMI extends Configured implements Tool {
     //TODO This output path is for the 2nd job's.
     //    The fits job will have an intermediate output path from which the second job's reducer will read
     String outputPath = cmdline.getOptionValue(OUTPUT);
-    String intermediatePath = "./appearance_totals";
+    String intermediatePath = "/Users/chris/Projects/UMD/MapReduce-assignments/assignment2/appearance_totals_pairs";
     
     
     
     int reduceTasks = cmdline.hasOption(NUM_REDUCERS) ? 
         Integer.parseInt(cmdline.getOptionValue(NUM_REDUCERS)) : 1;
 
-        LOG.info("Tool: " + PairsPMI.class.getSimpleName());
+        LOG.info("Tool: " + PairsPMI.class.getSimpleName() + " Appearances Part");
         LOG.info(" - input path: " + inputPath);
-        LOG.info(" - output path: " + outputPath);
+        LOG.info(" - output path: " + intermediatePath);
         LOG.info(" - number of reducers: " + reduceTasks);
 
         Configuration conf = getConf();
+        conf.set("intermediatePath", intermediatePath);
+        
         Job job1 = Job.getInstance(conf);
         job1.setJobName(PairsPMI.class.getSimpleName() + " AppearanceCount");
         job1.setJarByClass(PairsPMI.class);
@@ -224,24 +363,33 @@ public class PairsPMI extends Configured implements Tool {
         
         // Start second job
         
-//        Job job2 = Job.getInstance(conf);
-//        job2.setJobName(PairsPMI.class.getSimpleName() + " PairsPMICalcuation");
-//        job2.setJarByClass(PairsPMI.class);
-//        
-//        job2.setNumReduceTasks(reduceTasks);
-//        
-//        FileInputFormat.setInputPaths(job2,  new Path(inputPath));
-//        TextOutputFormat.setOutputPath(job2, new Path(outputPath));
-//        
-//        //TODO Which output key??
-////        job2.setOutputKeyClass(Text.class or PairOfStrings.class);
-//        job2.setOutputValueClass(FloatWritable.class);
-//        job2.setMapperClass(PairsPMIMapper.class);
+        LOG.info("Tool: " + PairsPMI.class.getSimpleName() + " Pairs Part");
+        LOG.info(" - input path: " + inputPath);
+        LOG.info(" - output path: " + outputPath);
+        LOG.info(" - number of reducers: " + reduceTasks);
+        
+        Job job2 = Job.getInstance(conf);
+        job2.setJobName(PairsPMI.class.getSimpleName() + " PairsPMICalcuation");
+        job2.setJarByClass(PairsPMI.class);
+        
+        job2.setNumReduceTasks(reduceTasks);
+        
+        FileInputFormat.setInputPaths(job2,  new Path(inputPath));
+        TextOutputFormat.setOutputPath(job2, new Path(outputPath));
+        
+        //TODO Which output key??
+        job2.setOutputKeyClass(PairOfStrings.class);
+        job2.setOutputValueClass(IntWritable.class);
+        job2.setMapperClass(PairsPMIMapper.class);
 //        job2.setCombinerClass(PairsPMICombiner.class);
-//        job2.setReducerClass(PairsPMIReducer.class);
-//        
-//        Path outputDir = new Path(outputPath);
-//        FileSystem.get(conf).delete(outputDir, true);
+        job2.setReducerClass(PairsPMIReducer.class);
+        
+        Path outputDir = new Path(outputPath);
+        FileSystem.get(conf).delete(outputDir, true);
+        
+        startTime = System.currentTimeMillis();
+        job2.waitForCompletion(true);
+        LOG.info("Job Finished in " + (System.currentTimeMillis() - startTime) / 1000.0 + " seconds");
         
         
         return 0;
