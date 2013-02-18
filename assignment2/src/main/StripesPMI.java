@@ -22,6 +22,7 @@ import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
@@ -30,6 +31,7 @@ import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.apache.log4j.Logger;
@@ -41,7 +43,7 @@ import edu.umd.cloud9.io.pair.PairOfStrings;
 
 public class StripesPMI extends Configured implements Tool {
 
-  private static final Logger LOG = Logger.getLogger(PairsPMI.class);
+  private static final Logger LOG = Logger.getLogger(StripesPMI.class);
 
   // First stage Mapper: emits pairs (token, 1) for each unique token in an input value,
   //                  and a pair (token pair, 1) for each unique pair of tokens
@@ -54,7 +56,6 @@ public class StripesPMI extends Configured implements Tool {
     @Override
     public void map(LongWritable key, Text value, Context context)
         throws IOException, InterruptedException{
-
 
       String line = value.toString();
       StringTokenizer t = new StringTokenizer(line);
@@ -104,8 +105,6 @@ public class StripesPMI extends Configured implements Tool {
     public void map(LongWritable key, Text value, Context context) 
         throws IOException, InterruptedException{
 
-      HMapSIW termCounts = new HMapSIW();
-
       String line = value.toString();
       StringTokenizer t = new StringTokenizer(line);
 
@@ -132,8 +131,8 @@ public class StripesPMI extends Configured implements Tool {
 
 
         KEY.set(left);
-
         context.write(KEY, MAP);
+        MAP.clear();
       }
 
 
@@ -142,28 +141,41 @@ public class StripesPMI extends Configured implements Tool {
 
   //TODO Write fill in combiner boilerplate
   //Combiner
-  private static class StripesPMICombiner extends Reducer<PairOfStrings, IntWritable, PairOfStrings, IntWritable> {
-    private static IntWritable SUM = new IntWritable(); 
+  private static class StripesPMICombiner extends Reducer<Text, HMapSIW, Text, HMapSIW> {
+    private static HMapSIW MAP = new HMapSIW(); 
+
 
 
     @Override
-    public void reduce(PairOfStrings pair, Iterable<IntWritable> values, Context context) 
+    public void reduce(Text term, Iterable<HMapSIW> values, Context context) 
         throws IOException, InterruptedException{
-      int sum = 0;
-      for(IntWritable value : values){
-        sum += value.get();
+
+      // Do a element-wise sum of the maps
+      for(HMapSIW pairMap : values){
+
+        for(String key : pairMap.keySet()){
+
+          if(MAP.containsKey(key)){
+            MAP.put(key, MAP.get(key) + pairMap.get(key));
+          }else{
+            MAP.put(key, pairMap.get(key));
+          }
+
+        }
+
       }
-      SUM.set(sum);
-      context.write(pair, SUM);
+      context.write(term, MAP);
     }
   }
 
   // Second Stage reducer: Finalizes PMI Calculation given 
-  private static class StripesPMIReducer extends Reducer<PairOfStrings, IntWritable, PairOfStrings, IntWritable> {
+  private static class StripesPMIReducer extends Reducer<Text, HMapSIW, PairOfStrings, DoubleWritable> {
 
     private static Map<String, Integer> termTotals = new HashMap<String, Integer>();
-
-    private static IntWritable PMI = new IntWritable();
+    private static Map<String, Integer> MAP = new HashMap<String, Integer>();
+    private static PairOfStrings PAIR = new PairOfStrings();
+    private static DoubleWritable PMI = new DoubleWritable();
+    private static double totalDocs = 156215;
 
     @Override
     public void setup(Context context) throws IOException{
@@ -172,7 +184,9 @@ public class StripesPMI extends Configured implements Tool {
       Configuration conf = context.getConfiguration();
       FileSystem fs = FileSystem.get(conf);
 
-      Path inFile = new Path(conf.get("intermediatePath"));
+      //      Path inFile = new Path(conf.get("intermediatePath"));
+      Path inFile = new Path("/Users/chris/Projects/UMD/MapReduce-assignments/assignment2/appearance_totals_stripes/part-r-00000");
+
       if(!fs.exists(inFile)){
         throw new IOException("File Not Found: " + inFile.toString());
       }
@@ -205,39 +219,47 @@ public class StripesPMI extends Configured implements Tool {
     }
 
     @Override
-    public void reduce(PairOfStrings pair, Iterable<IntWritable> values, Context context ) 
+    public void reduce(Text term, Iterable<HMapSIW> values, Context context ) 
         throws IOException, InterruptedException{
       // Recieving pair and pair counts -> Sum these for this pair's total
       // Only calculate PMI for pairs that occur 10 or more times
 
-      int pairSum = 0;
-      for(IntWritable value : values) {
-        pairSum += value.get();
+
+      // Do a element-wise sum of the maps
+      for(HMapSIW pairMap : values){
+
+        for(String key : pairMap.keySet()){
+
+          if(MAP.containsKey(key)){
+            MAP.put(key, MAP.get(key) + pairMap.get(key));
+          }else{
+            MAP.put(key, pairMap.get(key));
+          }
+        }
       }
 
-      if(pairSum >= 10){
+      // MAP contians the total co-appearnaces for incoming key, "term" 
+      //    and all the keys of the map. We'll make Pairs like this: (term, key_i)
+      String leftTerm = term.toString();
 
-        // Look up individual totals for each member of pair
-        // Calculate PMI emit Pair or Text as key and Float as value
-        String left = pair.getLeftElement();
-        String right = pair.getRightElement();
-        pair.set(left + " " + termTotals.get(left), right + " " + termTotals.get(right));
+      for(String key : MAP.keySet()){
+        PAIR.set(leftTerm, key);
 
-        PMI.set(pairSum);
-        context.write(pair, PMI);
+        double probPair = MAP.get(key) / totalDocs;
+        double probLeft = termTotals.get(leftTerm) / totalDocs;
+        double probRight = termTotals.get(key) / totalDocs;
+
+        double pmi = Math.log(probPair / (probLeft * probRight));
+
+        PMI.set(pmi);
+        context.write(PAIR, PMI);
+
       }
-
-
-
-
-
+      
+      MAP.clear();
 
     }
-
-    @Override
-    public void cleanup(Context context){
-      //
-    }
+    
   }
 
 
@@ -286,7 +308,8 @@ public class StripesPMI extends Configured implements Tool {
     //TODO This output path is for the 2nd job's.
     //    The fits job will have an intermediate output path from which the second job's reducer will read
     String outputPath = cmdline.getOptionValue(OUTPUT);
-    String intermediatePath = "./appearance_totals_stripes";
+    String intermediatePath = "/Users/chris/Projects/UMD/MapReduce-assignments/assignment2/appearance_totals_stripes";
+
 
 
 
@@ -326,35 +349,34 @@ public class StripesPMI extends Configured implements Tool {
         LOG.info("Job Finished in " + (System.currentTimeMillis() - startTime) / 1000.0 + " seconds");
 
 
-        //        // Start second job
-        //        
-        //        LOG.info("Tool: " + StripesPMI.class.getSimpleName() + " Stripes PMI Part");
-        //        LOG.info(" - input path: " + inputPath);
-        //        LOG.info(" - output path: " + outputPath);
-        //        LOG.info(" - number of reducers: " + reduceTasks);
-        //        
-        //        Job job2 = Job.getInstance(conf);
-        //        job2.setJobName(StripesPMI.class.getSimpleName() + " StripesPMICalcuation");
-        //        job2.setJarByClass(StripesPMI.class);
-        //        
-        //        job2.setNumReduceTasks(reduceTasks);
-        //        
-        //        FileInputFormat.setInputPaths(job2,  new Path(inputPath));
-        //        TextOutputFormat.setOutputPath(job2, new Path(outputPath));
-        //        
-        //        //TODO Which output key??
-        //        job2.setOutputKeyClass(PairOfStrings.class);
-        //        job2.setOutputValueClass(IntWritable.class);
-        //        job2.setMapperClass(StripesPMIMapper.class);
-        //        job2.setCombinerClass(StripesPMICombiner.class);
-        //        job2.setReducerClass(StripesPMIReducer.class);
-        //        
-        //        Path outputDir = new Path(outputPath);
-        //        FileSystem.get(conf).delete(outputDir, true);
-        //        
-        //        startTime = System.currentTimeMillis();
-        //        job2.waitForCompletion(true);
-        //        LOG.info("Job Finished in " + (System.currentTimeMillis() - startTime) / 1000.0 + " seconds");
+        // Start second job
+        LOG.info("Tool: " + StripesPMI.class.getSimpleName() + " Stripes PMI Part");
+        LOG.info(" - input path: " + inputPath);
+        LOG.info(" - output path: " + outputPath);
+        LOG.info(" - number of reducers: " + reduceTasks);
+
+        Job job2 = Job.getInstance(conf);
+        job2.setJobName(StripesPMI.class.getSimpleName() + " StripesPMICalcuation");
+        job2.setJarByClass(StripesPMI.class);
+
+        job2.setNumReduceTasks(reduceTasks);
+
+        FileInputFormat.setInputPaths(job2,  new Path(inputPath));
+        TextOutputFormat.setOutputPath(job2, new Path(outputPath));
+
+        //TODO Which output key??
+        job2.setOutputKeyClass(Text.class);
+        job2.setOutputValueClass(HMapSIW.class);
+        job2.setMapperClass(StripesPMIMapper.class);
+        job2.setCombinerClass(StripesPMICombiner.class);
+        job2.setReducerClass(StripesPMIReducer.class);
+
+        Path outputDir = new Path(outputPath);
+        FileSystem.get(conf).delete(outputDir, true);
+
+        startTime = System.currentTimeMillis();
+        job2.waitForCompletion(true);
+        LOG.info("Job Finished in " + (System.currentTimeMillis() - startTime) / 1000.0 + " seconds");
 
 
         return 0;

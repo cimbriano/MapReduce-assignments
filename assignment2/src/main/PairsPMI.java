@@ -96,52 +96,6 @@ public class PairsPMI extends Configured implements Tool {
   //                via a common key 
   private static class PairsPMIMapper extends Mapper<LongWritable, Text, PairOfStrings, IntWritable> {
     
-//    
-//    @Override
-//    public void setup(Context context) throws IOException{
-//      Configuration conf = context.getConfiguration();
-//      FileSystem fs = FileSystem.get(conf);
-//      
-////      Path inFile = new Path(conf.get("intermediatePath"));
-//      Path inFile = new Path("/Users/chris/Projects/UMD/MapReduce-assignments/assignment2/appearance_totals_stripes/part-r-00000");
-//      if(!fs.exists(inFile)){
-//        throw new IOException("File Not Found: " + inFile.toString());
-//      }
-//      
-//      BufferedReader reader = null;
-//      try{
-//        FSDataInputStream in = fs.open(inFile);
-//        InputStreamReader inStream = new InputStreamReader(in);
-//        reader = new BufferedReader(inStream);
-//        
-//        
-//      } catch(FileNotFoundException e){
-//        LOG.info("**************** Stack Trace *******************");
-//        e.printStackTrace();
-//        LOG.info("************** File not found *******************");
-//        LOG.info(inFile);
-//        LOG.info("Get Name: " + inFile.getName());
-//        LOG.info("Get Parent: " + inFile.getParent());
-//        
-//        LOG.info("************** File System *******************");
-//        LOG.info("fs: " + fs);
-//        LOG.info("Home Directory: " + fs.getHomeDirectory());
-//        LOG.info("URI:" + fs.getUri());
-//        LOG.info("Working Directory:" + fs.getWorkingDirectory());
-//        throw new IOException("Exception thrown when trying to open file.");
-//      }
-//      
-//      String line = reader.readLine();
-//      while(line != null){
-//        line = reader.readLine();
-//      }
-//      
-//      
-//      reader.close();
-//    }
-//    
-    
-    
     // Objects for reuse
     private final static PairOfStrings PAIR = new PairOfStrings();
     private final static IntWritable ONE = new IntWritable(1);
@@ -178,23 +132,21 @@ public class PairsPMI extends Configured implements Tool {
     }
   }
   
-//  //TODO Write fill in combiner boilerplate
-//  //Combiner
-//  private static class PairsPMICombiner extends Reducer<PairOfStrings, IntWritable, PairOfStrings, IntWritable> {
-//    private static IntWritable SUM = new IntWritable(); 
-//    
-//    
-//    @Override
-//    public void reduce(PairOfStrings pair, Iterable<IntWritable> values, Context context) 
-//        throws IOException, InterruptedException{
-//      int sum = 0;
-//      for(IntWritable value : values){
-//        sum += value.get();
-//      }
-//      SUM.set(sum);
-//      context.write(pair, SUM);
-//    }
-//  }
+  //Combiner
+  private static class PairsPMICombiner extends Reducer<PairOfStrings, IntWritable, PairOfStrings, IntWritable> {
+    private static IntWritable SUM = new IntWritable(); 
+    
+    @Override
+    public void reduce(PairOfStrings pair, Iterable<IntWritable> values, Context context) 
+        throws IOException, InterruptedException{
+      int sum = 0;
+      for(IntWritable value : values){
+        sum += value.get();
+      }
+      SUM.set(sum);
+      context.write(pair, SUM);
+    }
+  }
 
   // Second Stage reducer: Finalizes PMI Calculation given 
   private static class PairsPMIReducer extends Reducer<PairOfStrings, IntWritable, PairOfStrings, DoubleWritable> {
@@ -212,7 +164,7 @@ public class PairsPMI extends Configured implements Tool {
       FileSystem fs = FileSystem.get(conf);
       
 //      Path inFile = new Path(conf.get("intermediatePath"));
-      Path inFile = new Path("/Users/chris/Projects/UMD/MapReduce-assignments/assignment2/appearance_totals_stripes/part-r-00000");
+      Path inFile = new Path("/Users/chris/Projects/UMD/MapReduce-assignments/assignment2/appearance_totals_pairs/part-r-00000");
 
       if(!fs.exists(inFile)){
         throw new IOException("File Not Found: " + inFile.toString());
@@ -270,7 +222,7 @@ public class PairsPMI extends Configured implements Tool {
         double pmi = Math.log(probPair / (probLeft * probRight));
 
 
-        pair.set(left + " " + termTotals.get(left), right + " " + termTotals.get(right));
+        pair.set(left, right);
 
         PMI.set(pmi);
         context.write(pair, PMI);
@@ -381,7 +333,7 @@ public class PairsPMI extends Configured implements Tool {
         job2.setOutputKeyClass(PairOfStrings.class);
         job2.setOutputValueClass(IntWritable.class);
         job2.setMapperClass(PairsPMIMapper.class);
-//        job2.setCombinerClass(PairsPMICombiner.class);
+        job2.setCombinerClass(PairsPMICombiner.class);
         job2.setReducerClass(PairsPMIReducer.class);
         
         Path outputDir = new Path(outputPath);
