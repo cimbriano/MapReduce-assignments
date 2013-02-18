@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.TreeSet;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -54,16 +55,16 @@ public class PairsPMI extends Configured implements Tool {
 
     @Override
     public void map(LongWritable key, Text value, Context context)
-         throws IOException, InterruptedException{
-      
+        throws IOException, InterruptedException{
+
       String line = value.toString();
       StringTokenizer t = new StringTokenizer(line);
       Set<String> unique = new HashSet<String>();
       String token = "";
-      
+
       while(t.hasMoreTokens()){
         token = t.nextToken();
-        
+
         if(unique.add(token)){
           KEY.set(token);
           context.write(KEY, ONE);
@@ -84,48 +85,48 @@ public class PairsPMI extends Configured implements Tool {
       for(IntWritable value : values){
         sum += value.get();
       }
-      
+
       SUM.set(sum);
       context.write(key, SUM);
     }
   }
-  
-  
-  
+
+
+
   // Second stage mapper: Maps (A, TOTAL_A), (B, TOTAL_B) and (A_B, TOTAL_A_B) to the same reducer 
   //                via a common key 
   private static class PairsPMIMapper extends Mapper<LongWritable, Text, PairOfStrings, IntWritable> {
-    
+
     // Objects for reuse
     private final static PairOfStrings PAIR = new PairOfStrings();
     private final static IntWritable ONE = new IntWritable(1);
-    
+
     @Override
     public void map(LongWritable key, Text value, Context context) 
         throws IOException, InterruptedException{
-      
+
       String line = value.toString();
       StringTokenizer t = new StringTokenizer(line);
-      
-      // Need to pass through multiple times so put tokens into array
-      List<String> terms = new ArrayList<String>();
+
+      Set<String> sortedTerms = new TreeSet<String>();
       while(t.hasMoreTokens()){
-        terms.add(t.nextToken());
+        sortedTerms.add(t.nextToken());
       }
-      
+
       String left = "";
       String right = "";
-      Set<String> uniquePairs = new HashSet<String>();
-      
-      for(int leftTermIndex = 0; leftTermIndex < terms.size(); leftTermIndex++){
-        for(int rightTermIndex = leftTermIndex + 1; rightTermIndex < terms.size(); rightTermIndex++) {
-          left = terms.get(leftTermIndex);
-          right = terms.get(rightTermIndex);
 
-          if(uniquePairs.add(left + " " + right)){
-            PAIR.set(left, right);
-            context.write(PAIR, ONE);
-          }
+      String[] terms = new String[sortedTerms.size()]; 
+      sortedTerms.toArray(terms);
+
+      for(int leftTermIndex = 0; leftTermIndex < terms.length; leftTermIndex++){
+        for(int rightTermIndex = leftTermIndex + 1; rightTermIndex < terms.length; rightTermIndex++) {
+          left = terms[leftTermIndex];
+          right = terms[rightTermIndex];
+
+          PAIR.set(left, right);
+          context.write(PAIR, ONE);
+
         }
       }
       

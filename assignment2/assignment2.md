@@ -71,14 +71,55 @@ REDUCE OUT: PairOfStrings, DoubleWritable
 
 Question 1. What is the running time of the complete pairs implementation (in your VM)? What is the running time of the complete stripes implementation (in your VM)?
 
+Pairs Local:
+	Job 1: 4.666 
+	Job 2: 79.301
+	Total: 83.967 seconds
+
+Stripes Local:
+	Job 1: 4.607
+	Job 2: Does not finish successfully - DiskErrorException
+	Total: 
 
 
 Question 2. Now disable all combiners. What is the running time of the complete pairs implementation now? What is the running time of the complete stripes implementation?
 
+Pairs Local:
+	Job 1: 4.619 
+	Job 2: 67.307
+	Total: 71.926 seconds
+
+
+
+
 Question 3. How many distinct PMI pairs did you extract?
+
+132,663 distinct PMI pairs
+
+
 
 Question 4. What's the pair (x, y) with the highest PMI? Write a sentence or two to explain what it is and why it has such a high PMI.
 
+There was a tie for the pair with the highest PMI.
+
+(meshach, abednego)		9.319931212891643
+(shadrach, abednego)	9.319931212891643
+(shadrach, meshach)		9.319931212891643
+
+Apparently, these are three names from a particular bible story. They probably have a high PMI if the names always appear in the same context and never without the others.  
+
+
+
 Question 5. What are the three words that have the highest PMI with "cloud" and "love"? And what are the PMI values?
 
-Note that you can compute the answer to questions 3—6 however you wish: a helper Java program, a Python script, command-line manipulation, etc.
+Cloud
+
+(cloud, fire)	3.2354724775067973
+(cloud, glory)	3.3988751956140004
+(cloud, tabernacle)	4.153025039201374
+
+Love
+
+(commandments, love)	1.9395467861020765
+(hate, love)	2.5755355528220734
+(hermia, love)	2.0289918464540033
