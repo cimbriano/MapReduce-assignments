@@ -4,12 +4,6 @@ docs/
 etc/*.sh
 lib/
 
-# OSX
-.DS_Store
-
-# zsh
-.ant_targets
-
 # misc
 notes.txt
 
