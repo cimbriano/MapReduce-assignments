@@ -123,3 +123,13 @@ Love
 (commandments, love)	1.9395467861020765
 (hate, love)	2.5755355528220734
 (hermia, love)	2.0289918464540033
+
+Grading
+=======
+
+Everything looks great: the answers are correct, I was able to run
+your code without any problems. Great work!
+
+Score: 35/35
+
+-Jimmy
