@@ -14,7 +14,6 @@
  * permissions and limitations under the License.
  */
 
-package edu.umd.cloud9.example.ir;
 
 import java.io.IOException;
 import java.util.Arrays;
