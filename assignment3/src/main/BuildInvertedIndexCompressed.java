@@ -15,6 +15,8 @@
  */
 
 
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -29,11 +31,13 @@ import org.apache.commons.cli.ParseException;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.io.WritableComparator;
+import org.apache.hadoop.io.WritableUtils;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Partitioner;
@@ -125,21 +129,20 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
   }
 
   private static class MyReducer extends
-  Reducer<TextIntWritablePairComparable, IntWritable, Text, PairOfWritables<IntWritable, ArrayListWritable<PairOfInts>>> {
+  Reducer<TextIntWritablePairComparable, IntWritable, Text, BytesWritable> {
 
     private final static IntWritable DF_WRITABLE = new IntWritable();
     private final static ArrayListWritable<PairOfInts> POSTINGS = new ArrayListWritable<PairOfInts>();
     private final static PairOfInts SINGLE_POSTING = new PairOfInts();
     private final static Text TERM = new Text();
     
+    private final static ByteArrayOutputStream postingByteStream = new ByteArrayOutputStream();
+    private final static DataOutputStream outStream = new DataOutputStream(postingByteStream);
+    
     private static int docno = 0;
     private static int termFreq = 0;
     private static int docFreq = 0;
     private static String currentTerm = null;
-    
-    @Override
-    public void setup(Context context) {
-    }
     
     @Override
     public void reduce(TextIntWritablePairComparable key, Iterable<IntWritable> values, Context context)
@@ -158,23 +161,27 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
         while(iter.hasNext()){
           docFreq++;
           termFreq = iter.next().get();
-          SINGLE_POSTING.set(docno, termFreq);
-          POSTINGS.add(SINGLE_POSTING.clone());
+          
+          WritableUtils.writeVInt(outStream, docno);
+          WritableUtils.writeVInt(outStream, termFreq);
+          
         }
 
       } else {
         // Emit the current posting list and reset everything for next term
 
-        DF_WRITABLE.set(docFreq);
         TERM.set(currentTerm);
-
+        
+        outStream.flush();
+        byte[] bytes = postingByteStream.toByteArray();
+        
         context.write(TERM, 
-            new PairOfWritables<IntWritable, ArrayListWritable<PairOfInts>>(DF_WRITABLE, POSTINGS) );
+            new BytesWritable(bytes) );
 
         //Reset counters
         docFreq = 0;
         currentTerm = key.getKey().toString();
-        POSTINGS.clear();
+        postingByteStream.reset();
         
         //Iterate through the values (first posting for new word)
         Iterator<IntWritable> iter = values.iterator();
@@ -191,10 +198,15 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
     @Override
     public void cleanup(Context context) throws IOException, InterruptedException{
 
-      DF_WRITABLE.set(docFreq);
+//      DF_WRITABLE.set(docFreq);
       TERM.set(currentTerm);
-      context.write(TERM, 
-          new PairOfWritables<IntWritable, ArrayListWritable<PairOfInts>>(DF_WRITABLE, POSTINGS) );
+      
+      outStream.flush();
+      byte[] bytes = postingByteStream.toByteArray();
+      context.write(TERM, new BytesWritable(bytes));
+      
+      postingByteStream.close();
+      outStream.close();
       
     }
     
@@ -262,7 +274,7 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
         job.setMapOutputValueClass(IntWritable.class);
 
         job.setOutputKeyClass(Text.class);
-        job.setOutputValueClass(PairOfWritables.class);
+        job.setOutputValueClass(BytesWritable.class);
 
 //        job.setOutputFormatClass(TextOutputFormat.class);
 
