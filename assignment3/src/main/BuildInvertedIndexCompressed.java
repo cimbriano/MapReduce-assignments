@@ -44,14 +44,11 @@ import org.apache.hadoop.mapreduce.Partitioner;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
-import org.apache.hadoop.mapreduce.lib.output.MapFileOutputFormat;
+import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.apache.log4j.Logger;
 
-import edu.umd.cloud9.io.array.ArrayListWritable;
-import edu.umd.cloud9.io.pair.PairOfInts;
-import edu.umd.cloud9.io.pair.PairOfWritables;
 import edu.umd.cloud9.util.fd.Object2IntFrequencyDistribution;
 import edu.umd.cloud9.util.fd.Object2IntFrequencyDistributionEntry;
 import edu.umd.cloud9.util.pair.PairOfObjectInt;
@@ -130,18 +127,16 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
 
   private static class MyReducer extends
   Reducer<TextIntWritablePairComparable, IntWritable, Text, BytesWritable> {
-
-    private final static IntWritable DF_WRITABLE = new IntWritable();
-    private final static ArrayListWritable<PairOfInts> POSTINGS = new ArrayListWritable<PairOfInts>();
-    private final static PairOfInts SINGLE_POSTING = new PairOfInts();
     private final static Text TERM = new Text();
     
     private final static ByteArrayOutputStream postingByteStream = new ByteArrayOutputStream();
     private final static DataOutputStream outStream = new DataOutputStream(postingByteStream);
     
-    private static int docno = 0;
+    private static int lastDocno = 0;
+    private static int thisDocno = 0;
+    private static int dGapInt = 0;
+    
     private static int termFreq = 0;
-    private static int docFreq = 0;
     private static String currentTerm = null;
     
     @Override
@@ -149,7 +144,7 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
         throws IOException, InterruptedException {
 
       //Get doc number
-      docno = key.getRightElement().get();
+      thisDocno = key.getRightElement().get();
       
       String incomingTerm = key.getKey().toString();
       if(incomingTerm.equals(currentTerm) || currentTerm == null){
@@ -159,37 +154,38 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
         //Iterate through the values
         Iterator<IntWritable> iter = values.iterator();
         while(iter.hasNext()){
-          docFreq++;
           termFreq = iter.next().get();
           
-          WritableUtils.writeVInt(outStream, docno);
+          dGapInt = thisDocno - lastDocno;
+          WritableUtils.writeVInt(outStream, dGapInt);
           WritableUtils.writeVInt(outStream, termFreq);
-          
+
+          lastDocno = thisDocno;
         }
 
       } else {
         // Emit the current posting list and reset everything for next term
-
         TERM.set(currentTerm);
         
         outStream.flush();
+        postingByteStream.flush();
         byte[] bytes = postingByteStream.toByteArray();
         
         context.write(TERM, 
             new BytesWritable(bytes) );
 
         //Reset counters
-        docFreq = 0;
+        lastDocno = 0;
         currentTerm = key.getKey().toString();
         postingByteStream.reset();
         
         //Iterate through the values (first posting for new word)
         Iterator<IntWritable> iter = values.iterator();
         while(iter.hasNext()){
-          docFreq++;
           termFreq = iter.next().get();
-          SINGLE_POSTING.set(docno, termFreq);
-          POSTINGS.add(SINGLE_POSTING.clone());
+          
+          dGapInt = thisDocno - lastDocno;
+          lastDocno = thisDocno;
         }
       }
 
@@ -198,16 +194,15 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
     @Override
     public void cleanup(Context context) throws IOException, InterruptedException{
 
-//      DF_WRITABLE.set(docFreq);
       TERM.set(currentTerm);
       
       outStream.flush();
+      postingByteStream.flush();
       byte[] bytes = postingByteStream.toByteArray();
       context.write(TERM, new BytesWritable(bytes));
       
       postingByteStream.close();
-      outStream.close();
-      
+      outStream.close();      
     }
     
   }
@@ -276,10 +271,10 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
         job.setOutputKeyClass(Text.class);
         job.setOutputValueClass(BytesWritable.class);
 
-//        job.setOutputFormatClass(TextOutputFormat.class);
+        job.setOutputFormatClass(TextOutputFormat.class);
 
         //Use this one v. Using TextOutput just to test output
-        job.setOutputFormatClass(MapFileOutputFormat.class);
+//        job.setOutputFormatClass(MapFileOutputFormat.class);
 
         job.setMapperClass(MyMapper.class);
         job.setPartitionerClass(MyPartitioner.class);
