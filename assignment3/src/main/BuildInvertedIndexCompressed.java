@@ -40,7 +40,7 @@ import org.apache.hadoop.mapreduce.Partitioner;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
-import org.apache.hadoop.mapreduce.lib.output.MapFileOutputFormat;
+import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.apache.log4j.Logger;
@@ -132,21 +132,21 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
     private final static PairOfInts SINGLE_POSTING = new PairOfInts();
     private final static Text TERM = new Text();
     
-    private static int docno = 0;
+    private static int lastDocno = 0;
+    private static int thisDocno = 0;
+    private static int dGapInt = 0;
+    
+    
     private static int termFreq = 0;
     private static int docFreq = 0;
     private static String currentTerm = null;
-    
-    @Override
-    public void setup(Context context) {
-    }
     
     @Override
     public void reduce(TextIntWritablePairComparable key, Iterable<IntWritable> values, Context context)
         throws IOException, InterruptedException {
 
       //Get doc number
-      docno = key.getRightElement().get();
+      thisDocno = key.getRightElement().get();
       
       String incomingTerm = key.getKey().toString();
       if(incomingTerm.equals(currentTerm) || currentTerm == null){
@@ -158,13 +158,16 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
         while(iter.hasNext()){
           docFreq++;
           termFreq = iter.next().get();
-          SINGLE_POSTING.set(docno, termFreq);
+          
+          dGapInt = thisDocno - lastDocno;
+          
+          SINGLE_POSTING.set(dGapInt, termFreq);
           POSTINGS.add(SINGLE_POSTING.clone());
+          lastDocno = thisDocno;
         }
 
       } else {
         // Emit the current posting list and reset everything for next term
-
         DF_WRITABLE.set(docFreq);
         TERM.set(currentTerm);
 
@@ -173,6 +176,7 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
 
         //Reset counters
         docFreq = 0;
+        lastDocno = 0;
         currentTerm = key.getKey().toString();
         POSTINGS.clear();
         
@@ -181,8 +185,12 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
         while(iter.hasNext()){
           docFreq++;
           termFreq = iter.next().get();
-          SINGLE_POSTING.set(docno, termFreq);
+          
+          dGapInt = thisDocno - lastDocno;
+          
+          SINGLE_POSTING.set(dGapInt, termFreq);
           POSTINGS.add(SINGLE_POSTING.clone());
+          lastDocno = thisDocno;
         }
       }
 
@@ -264,10 +272,10 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
         job.setOutputKeyClass(Text.class);
         job.setOutputValueClass(PairOfWritables.class);
 
-//        job.setOutputFormatClass(TextOutputFormat.class);
+        job.setOutputFormatClass(TextOutputFormat.class);
 
         //Use this one v. Using TextOutput just to test output
-        job.setOutputFormatClass(MapFileOutputFormat.class);
+//        job.setOutputFormatClass(MapFileOutputFormat.class);
 
         job.setMapperClass(MyMapper.class);
         job.setPartitionerClass(MyPartitioner.class);
