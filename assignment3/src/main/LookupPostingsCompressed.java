@@ -111,6 +111,7 @@ public class LookupPostingsCompressed extends Configured implements Tool {
     }
 
     key.set("gold");
+    reader.get(key, value);
     postings = PostingReader.readPostings(value);
     System.out.println("Complete postings list for 'gold': " + postings);
 
