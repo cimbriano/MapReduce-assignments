@@ -44,7 +44,7 @@ import org.apache.hadoop.mapreduce.Partitioner;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
-import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
+import org.apache.hadoop.mapreduce.lib.output.MapFileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.apache.log4j.Logger;
@@ -136,6 +136,7 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
     private static int thisDocno = 0;
     private static int dGapInt = 0;
     
+    private static int docFreq = 0;
     private static int termFreq = 0;
     private static String currentTerm = null;
     
@@ -145,8 +146,8 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
 
       //Get doc number
       thisDocno = key.getRightElement().get();
-      
       String incomingTerm = key.getKey().toString();
+
       if(incomingTerm.equals(currentTerm) || currentTerm == null){
         
         currentTerm = key.getKey().toString();
@@ -154,37 +155,57 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
         //Iterate through the values
         Iterator<IntWritable> iter = values.iterator();
         while(iter.hasNext()){
+          docFreq++;
           termFreq = iter.next().get();
           
           dGapInt = thisDocno - lastDocno;
           WritableUtils.writeVInt(outStream, dGapInt);
           WritableUtils.writeVInt(outStream, termFreq);
+          
 
           lastDocno = thisDocno;
         }
 
       } else {
         // Emit the current posting list and reset everything for next term
+
+        if(currentTerm.equals("starcross'd")){
+          LOG.info("starcross'd Posting Byte Stream size: " + postingByteStream.size());
+        }
+        
+        if(lastDocno % 10 == 0) {
+          LOG.info(currentTerm + " posting list size = " + postingByteStream.size());
+        }
+        
         TERM.set(currentTerm);
         
         outStream.flush();
         postingByteStream.flush();
-        byte[] bytes = postingByteStream.toByteArray();
         
-        context.write(TERM, 
-            new BytesWritable(bytes) );
+        ByteArrayOutputStream toWrite = new ByteArrayOutputStream(4 + postingByteStream.size());
+        DataOutputStream out = new DataOutputStream(toWrite);
+        WritableUtils.writeVInt(out, docFreq);
+        out.write(postingByteStream.toByteArray());
+
+        context.write(TERM, new BytesWritable(toWrite.toByteArray()) );
 
         //Reset counters
         lastDocno = 0;
+        docFreq = 0;
         currentTerm = key.getKey().toString();
         postingByteStream.reset();
         
         //Iterate through the values (first posting for new word)
         Iterator<IntWritable> iter = values.iterator();
         while(iter.hasNext()){
+          docFreq++;
           termFreq = iter.next().get();
           
           dGapInt = thisDocno - lastDocno;
+
+          WritableUtils.writeVInt(outStream, dGapInt);
+          WritableUtils.writeVInt(outStream, termFreq);
+
           lastDocno = thisDocno;
         }
       }
@@ -198,8 +219,14 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
       
       outStream.flush();
       postingByteStream.flush();
-      byte[] bytes = postingByteStream.toByteArray();
-      context.write(TERM, new BytesWritable(bytes));
+      
+      
+      ByteArrayOutputStream toWrite = new ByteArrayOutputStream(4 + postingByteStream.size());
+      DataOutputStream out = new DataOutputStream(toWrite);
+      WritableUtils.writeVInt(out, docFreq);
+      out.write(postingByteStream.toByteArray());
+
+      context.write(TERM, new BytesWritable(toWrite.toByteArray()));
       
       postingByteStream.close();
       outStream.close();      
@@ -271,10 +298,10 @@ public class BuildInvertedIndexCompressed extends Configured implements Tool {
         job.setOutputKeyClass(Text.class);
         job.setOutputValueClass(BytesWritable.class);
 
-        job.setOutputFormatClass(TextOutputFormat.class);
+//        job.setOutputFormatClass(TextOutputFormat.class);
 
         //Use this one v. Using TextOutput just to test output
-//        job.setOutputFormatClass(MapFileOutputFormat.class);
+        job.setOutputFormatClass(MapFileOutputFormat.class);
 
         job.setMapperClass(MyMapper.class);
         job.setPartitionerClass(MyPartitioner.class);
