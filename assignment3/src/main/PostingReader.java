@@ -20,26 +20,20 @@ public class PostingReader {
 
     ArrayList<PairOfInts> retVal = new ArrayList<PairOfInts>();
 
-    int docno = -1;
+    int docno = 0;
+    int nextDgap = 0;
     int termFreq = -1;
-
-    //    int read = inStream.read();
-    //    
-    //    while(read != -1){
-    //      System.out.println("Read byte: " + read);
-    //      
-    //      read = inStream.read();
-    //    }
-
     int numPostings = WritableUtils.readVInt(inStream);
+    
 
     for(int i = 0; i < numPostings; i++){
 
-      docno = WritableUtils.readVInt(inStream);
+      nextDgap = WritableUtils.readVInt(inStream);
       termFreq = WritableUtils.readVInt(inStream);
-
+      
+      docno = docno + nextDgap;
+      
       retVal.add(new PairOfInts(docno, termFreq));
-
     }
 
 
