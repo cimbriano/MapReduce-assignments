@@ -17,7 +17,6 @@
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
 import java.util.Arrays;
 
 import org.apache.commons.cli.CommandLine;
@@ -33,13 +32,16 @@ import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.BytesWritable;
+import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.MapFile;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 
+import edu.umd.cloud9.io.array.ArrayListWritable;
 import edu.umd.cloud9.io.pair.PairOfInts;
+import edu.umd.cloud9.io.pair.PairOfWritables;
 import edu.umd.cloud9.util.fd.Int2IntFrequencyDistribution;
 import edu.umd.cloud9.util.fd.Int2IntFrequencyDistributionEntry;
 
@@ -103,8 +105,8 @@ public class LookupPostingsCompressed extends Configured implements Tool {
 
     reader.get(key, value);
 
-    ArrayList<PairOfInts> postings = PostingReader.readPostings(value);
-    for (PairOfInts pair : postings) {
+    PairOfWritables<IntWritable, ArrayListWritable<PairOfInts>> postings = PostingReader.readPostings(value);
+    for (PairOfInts pair : postings.getRightElement()) {
       System.out.println(pair);
       collection.seek(pair.getLeftElement());
       System.out.println(d.readLine());
@@ -116,7 +118,7 @@ public class LookupPostingsCompressed extends Configured implements Tool {
     System.out.println("Complete postings list for 'gold': " + postings);
 
     Int2IntFrequencyDistribution goldHist = new Int2IntFrequencyDistributionEntry();
-    for (PairOfInts pair : postings) {
+    for (PairOfInts pair : postings.getRightElement()) {
       goldHist.increment(pair.getRightElement());
     }
 
@@ -131,7 +133,7 @@ public class LookupPostingsCompressed extends Configured implements Tool {
     System.out.println("Complete postings list for 'silver': " + postings);
 
     Int2IntFrequencyDistribution silverHist = new Int2IntFrequencyDistributionEntry();
-    for (PairOfInts pair : postings) {
+    for (PairOfInts pair : postings.getRightElement()) {
       silverHist.increment(pair.getRightElement());
     }
 

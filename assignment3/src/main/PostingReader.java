@@ -1,24 +1,27 @@
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
-import java.util.ArrayList;
 
 import org.apache.hadoop.io.BytesWritable;
+import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.WritableUtils;
 
+import edu.umd.cloud9.io.array.ArrayListWritable;
 import edu.umd.cloud9.io.pair.PairOfInts;
+import edu.umd.cloud9.io.pair.PairOfWritables;
 
 
 public class PostingReader {
 
-  public static ArrayList<PairOfInts> readPostings(BytesWritable bytesWritable) throws IOException{
+  public static PairOfWritables<IntWritable, ArrayListWritable<PairOfInts>> 
+    readPostings(BytesWritable bytesWritable) throws IOException{
 
     byte[] bytes = bytesWritable.getBytes();
 
     ByteArrayInputStream postingsByteStream = new ByteArrayInputStream(bytes);
     DataInputStream inStream = new DataInputStream(postingsByteStream);
 
-    ArrayList<PairOfInts> retVal = new ArrayList<PairOfInts>();
+    ArrayListWritable<PairOfInts> postings = new ArrayListWritable<PairOfInts>();
 
     int docno = 0;
     int nextDgap = 0;
@@ -33,11 +36,11 @@ public class PostingReader {
       
       docno = docno + nextDgap;
       
-      retVal.add(new PairOfInts(docno, termFreq));
+      postings.add(new PairOfInts(docno, termFreq));
     }
 
-
-    return retVal;
+    
+    return new PairOfWritables<IntWritable, ArrayListWritable<PairOfInts>>(new IntWritable(numPostings), postings);
 
   }
 

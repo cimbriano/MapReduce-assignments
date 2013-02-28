@@ -134,9 +134,9 @@ public class BooleanRetrievalCompressed extends Configured implements Tool {
     key.set(term);
     index.get(key, value);
     
-    ArrayList<PairOfInts> postings = PostingReader.readPostings(value);
+    PairOfWritables<IntWritable, ArrayListWritable<PairOfInts>> postings = PostingReader.readPostings(value);
 
-    return postings;
+    return postings.getRightElement();
   }
     
 
