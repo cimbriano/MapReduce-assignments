@@ -18,6 +18,7 @@
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Set;
 import java.util.Stack;
@@ -35,6 +36,7 @@ import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.MapFile;
 import org.apache.hadoop.io.Text;
@@ -125,16 +127,18 @@ public class BooleanRetrievalCompressed extends Configured implements Tool {
     return set;
   }
 
-  private ArrayListWritable<PairOfInts> fetchPostings(String term) throws IOException {
+  private ArrayList<PairOfInts> fetchPostings(String term) throws IOException {
     Text key = new Text();
-    PairOfWritables<IntWritable, ArrayListWritable<PairOfInts>> value =
-        new PairOfWritables<IntWritable, ArrayListWritable<PairOfInts>>();
+    BytesWritable value = new BytesWritable();
 
     key.set(term);
     index.get(key, value);
+    
+    ArrayList<PairOfInts> postings = PostingReader.readPostings(value);
 
-    return value.getRightElement();
+    return postings;
   }
+    
 
   private String fetchLine(long offset) throws IOException {
     collection.seek(offset);
