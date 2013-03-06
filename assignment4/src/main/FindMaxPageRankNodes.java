@@ -14,8 +14,6 @@
  * permissions and limitations under the License.
  */
 
-package edu.umd.cloud9.example.pagerank;
-
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -44,6 +42,7 @@ import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.apache.log4j.Logger;
 
+import edu.umd.cloud9.example.pagerank.PageRankNode;
 import edu.umd.cloud9.util.TopNScoredObjects;
 import edu.umd.cloud9.util.pair.PairOfObjectFloat;
 

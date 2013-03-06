@@ -14,8 +14,6 @@
  * permissions and limitations under the License.
  */
 
-package edu.umd.cloud9.example.pagerank;
-
 import java.util.Arrays;
 
 import org.apache.commons.cli.CommandLine;
@@ -39,6 +37,8 @@ import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.apache.log4j.Logger;
 
+import edu.umd.cloud9.example.pagerank.PageRankNode;
+import edu.umd.cloud9.example.pagerank.RangePartitioner;
 import edu.umd.cloud9.mapreduce.lib.input.NonSplitableSequenceFileInputFormat;
 
 /**

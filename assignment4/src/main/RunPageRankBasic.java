@@ -14,8 +14,6 @@
  * permissions and limitations under the License.
  */
 
-package edu.umd.cloud9.example.pagerank;
-
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
@@ -50,6 +48,8 @@ import org.apache.log4j.Logger;
 
 import com.google.common.base.Preconditions;
 
+import edu.umd.cloud9.example.pagerank.PageRankNode;
+import edu.umd.cloud9.example.pagerank.RunPageRankSchimmy;
 import edu.umd.cloud9.io.array.ArrayListOfIntsWritable;
 import edu.umd.cloud9.mapreduce.lib.input.NonSplitableSequenceFileInputFormat;
 import edu.umd.cloud9.util.map.HMapIF;
