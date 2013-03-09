@@ -16,6 +16,7 @@
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.HashMap;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -61,15 +62,25 @@ public class BuildPersonalizedPageRankRecords extends Configured implements Tool
   private static class MyMapper extends Mapper<LongWritable, Text, IntWritable, PageRankNode> {
     private static final IntWritable nid = new IntWritable();
     private static final PageRankNode node = new PageRankNode();
+    private static final HashMap<Integer, Integer> sourceIds = new HashMap<Integer, Integer>();
 
     @Override
     public void setup(Mapper<LongWritable, Text, IntWritable, PageRankNode>.Context context) {
+      
+      String[] sourceList = context.getConfiguration().getStrings("sources");
+      if(sourceList.length == 0){
+        throw new RuntimeException("Source list cannot be empty!");
+      }
+      
+      for(int i = 0; i < sourceList.length; i++){
+        sourceIds.put(Integer.parseInt(sourceList[i]), i);
+      }
+      
       int n = context.getConfiguration().getInt(NODE_CNT_FIELD, 0);
       if (n == 0) {
         throw new RuntimeException(NODE_CNT_FIELD + " cannot be 0!");
       }
       node.setType(PageRankNode.Type.Complete);
-      node.setPageRank((float) -StrictMath.log(n));
     }
 
     @Override
@@ -92,6 +103,29 @@ public class BuildPersonalizedPageRankRecords extends Configured implements Tool
 
         node.setAdjacencyList(new ArrayListOfIntsWritable(neighbors));
       }
+      
+      int nodeId = nid.get();
+      if(sourceIds.containsKey(nodeId)){
+        int position = sourceIds.get(nodeId);
+        
+        //TODO Update this for multiple sources
+        if(position == 0){
+          node.setPageRank( (float) Math.log(1.0));
+          LOG.info("DEBUG: Source node found: adding page rank of " + node.getPageRank() + " to " + nodeId);
+          
+        } else {
+          node.setPageRank( (float) Math.log(0.0));
+          LOG.info("DEBUG: NodeId: " + nodeId + " is not the single source. Getting pagerank: " + node.getPageRank());
+          
+        }
+        
+      } else {
+        node.setPageRank( (float) Math.log(0.0));
+        LOG.info("DEBUG: NodeId: " + nodeId + " is not a source. Getting pagerank: " + node.getPageRank());
+      }
+      
+      
+      //TODO init pagerank array to correct size
 
       context.getCounter("graph", "numNodes").increment(1);
       context.getCounter("graph", "numEdges").increment(arr.length - 1);
@@ -109,6 +143,7 @@ public class BuildPersonalizedPageRankRecords extends Configured implements Tool
   private static final String INPUT = "input";
   private static final String OUTPUT = "output";
   private static final String NUM_NODES = "numNodes";
+  private static final String SOURCES = "sources";
 
   /**
    * Runs this tool.
@@ -123,6 +158,8 @@ public class BuildPersonalizedPageRankRecords extends Configured implements Tool
         .withDescription("output path").create(OUTPUT));
     options.addOption(OptionBuilder.withArgName("num").hasArg()
         .withDescription("number of nodes").create(NUM_NODES));
+    options.addOption(OptionBuilder.withArgName("sources").hasArg()
+        .withDescription("source nodes").create(SOURCES));
 
     CommandLine cmdline;
     CommandLineParser parser = new GnuParser();
@@ -134,7 +171,9 @@ public class BuildPersonalizedPageRankRecords extends Configured implements Tool
       return -1;
     }
 
-    if (!cmdline.hasOption(INPUT) || !cmdline.hasOption(OUTPUT) || !cmdline.hasOption(NUM_NODES)) {
+    if (!cmdline.hasOption(INPUT) || !cmdline.hasOption(OUTPUT) 
+                                  || !cmdline.hasOption(NUM_NODES)
+                                  || !cmdline.hasOption(SOURCES)) {
       System.out.println("args: " + Arrays.toString(args));
       HelpFormatter formatter = new HelpFormatter();
       formatter.setWidth(120);
@@ -146,15 +185,19 @@ public class BuildPersonalizedPageRankRecords extends Configured implements Tool
     String inputPath = cmdline.getOptionValue(INPUT);
     String outputPath = cmdline.getOptionValue(OUTPUT);
     int n = Integer.parseInt(cmdline.getOptionValue(NUM_NODES));
+    String sources = cmdline.getOptionValue(SOURCES);
 
     LOG.info("Tool name: " + BuildPersonalizedPageRankRecords.class.getSimpleName());
     LOG.info(" - inputDir: " + inputPath);
     LOG.info(" - outputDir: " + outputPath);
     LOG.info(" - numNodes: " + n);
+    LOG.info(" - sources: " + sources);
 
+    
     Configuration conf = getConf();
     conf.setInt(NODE_CNT_FIELD, n);
     conf.setInt("mapred.min.split.size", 1024 * 1024 * 1024);
+    conf.setStrings("sources", sources);
 
     Job job = Job.getInstance(conf);
     job.setJobName(BuildPersonalizedPageRankRecords.class.getSimpleName() + ":" + inputPath);
@@ -175,7 +218,7 @@ public class BuildPersonalizedPageRankRecords extends Configured implements Tool
     job.setOutputValueClass(PageRankNode.class);
 
     job.setMapperClass(MyMapper.class);
-
+    
     // Delete the output directory if it exists already.
     FileSystem.get(conf).delete(new Path(outputPath), true);
 
