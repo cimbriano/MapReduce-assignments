@@ -54,7 +54,9 @@ public class PageRankNodeExtended implements Writable {
 	private ArrayListOfFloatsWritable pageranks;
 	private ArrayListOfIntsWritable adjacenyList;
 
-	public PageRankNodeExtended() {}
+	public PageRankNodeExtended() {
+		pageranks = new ArrayListOfFloatsWritable();
+	}
 
 	public ArrayListOfFloatsWritable getPageRankArray() {
 		return pageranks;
