@@ -108,7 +108,8 @@ public class ExtractTopPersonalizedPageRankNodes extends Configured implements T
 
       for (PairOfObjectFloat<Integer> pair : queue.extractAll()) {
         key.set(pair.getLeftElement());
-        value.set(pair.getRightElement());
+       
+        value.set((float) Math.exp(pair.getRightElement()));
         context.write(key, value);
       }
     }
@@ -120,6 +121,7 @@ public class ExtractTopPersonalizedPageRankNodes extends Configured implements T
   private static final String INPUT = "input";
   private static final String OUTPUT = "output";
   private static final String TOP = "top";
+  private static final String SOURCES = "sources";
 
   /**
    * Runs this tool.
@@ -134,6 +136,8 @@ public class ExtractTopPersonalizedPageRankNodes extends Configured implements T
         .withDescription("output path").create(OUTPUT));
     options.addOption(OptionBuilder.withArgName("num").hasArg()
         .withDescription("top n").create(TOP));
+    options.addOption(OptionBuilder.withArgName("sources").hasArg()
+            .withDescription("source nodes").create(SOURCES));
 
     CommandLine cmdline;
     CommandLineParser parser = new GnuParser();
@@ -145,7 +149,9 @@ public class ExtractTopPersonalizedPageRankNodes extends Configured implements T
       return -1;
     }
 
-    if (!cmdline.hasOption(INPUT) || !cmdline.hasOption(OUTPUT) || !cmdline.hasOption(TOP)) {
+    if (!cmdline.hasOption(INPUT) || !cmdline.hasOption(OUTPUT)
+    							  || !cmdline.hasOption(TOP)
+    							  || !cmdline.hasOption(SOURCES)) {
       System.out.println("args: " + Arrays.toString(args));
       HelpFormatter formatter = new HelpFormatter();
       formatter.setWidth(120);
@@ -157,11 +163,13 @@ public class ExtractTopPersonalizedPageRankNodes extends Configured implements T
     String inputPath = cmdline.getOptionValue(INPUT);
     String outputPath = cmdline.getOptionValue(OUTPUT);
     int n = Integer.parseInt(cmdline.getOptionValue(TOP));
+    String sourcesString = cmdline.getOptionValue(SOURCES);
 
     LOG.info("Tool name: " + ExtractTopPersonalizedPageRankNodes.class.getSimpleName());
     LOG.info(" - input: " + inputPath);
     LOG.info(" - output: " + outputPath);
     LOG.info(" - top: " + n);
+    LOG.info(" - sources: " + sourcesString);
 
     Configuration conf = getConf();
     conf.setInt("mapred.min.split.size", 1024 * 1024 * 1024);
