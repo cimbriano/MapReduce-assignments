@@ -1,0 +1,23 @@
+hadoop fs -mkdir data
+
+etc/hadoop-cluster.sh BuildPersonalizedPageRankRecords -input data/sample-small.txt -output data/imbriano-records -numNodes 93 -sources 9465097,12610128,12208977
+
+hadoop fs -mkdir imbriano-pagerank-out
+
+etc/hadoop-cluster.sh PartitionGraph -input data/imbriano-records -output imbriano-pagerank-out/iter0000 -numPartitions 5 -numNodes 93
+
+etc/hadoop-cluster.sh RunPersonalizedPageRankBasic -base imbriano-pagerank-out -numNodes 93 -start 0 -end 20 -sources 9465097,12610128,12208977
+
+etc/hadoop-cluster.sh ExtractTopPersonalizedPageRankNodes -input imbriano-pagerank-out/iter0020 -output imbriano-top-10-personalized -top 10 -sources 9465097,12610128,12208977
+
+
+
+# For working with default PR
+etc/hadoop-cluster.sh baseline.FindMaxPageRankNodes -input imbriano-pagerank-out/iter0020 -output top-10 -top 10
+
+etc/hadoop-cluster.sh RunPersonalizedPageRankBasic -base imbriano-pagerank-out -numNodes 93 -start 0 -end 1 -sources 9465097,12610128,12208977
+
+
+
+'Jimmys
+etc/run.sh baseline.SequentialPersonalizedPageRank -input data/sample-small.txt -source 9465097
