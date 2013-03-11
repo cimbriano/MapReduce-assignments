@@ -65,15 +65,15 @@ public class PageRankNodeExtended implements Writable {
 	}
 	
 	public void setPageRank(int position, float value){
-		if(position > 0 && position < pageranks.size()){
+		if(position >= 0 && position < pageranks.size()){
 			pageranks.set(position, value);
 		} else {
-			throw new ArrayIndexOutOfBoundsException("Can't get pagerank at invalid position:" + position);
+			throw new ArrayIndexOutOfBoundsException("Can't set pagerank at invalid position: " + position);
 		}
 	}
 	
 	public float getPageRank(int position){
-		if(position > 0 && position < pageranks.size()){
+		if(position >= 0 && position < pageranks.size()){
 			return pageranks.get(position);
 			
 		} else{
@@ -147,7 +147,7 @@ public class PageRankNodeExtended implements Writable {
 
 	@Override
 	public String toString() {
-		return String.format("{%d %.4f %s}",
+		return String.format("{%d %s %s}",
 				nodeid, 
 				(pageranks == null ? "[]" : pageranks.toString(10)), 
 				(adjacenyList == null ? "[]" : adjacenyList.toString(10)) );

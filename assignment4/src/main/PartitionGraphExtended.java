@@ -42,53 +42,53 @@ public class PartitionGraphExtended extends Configured implements Tool {
 
 	public PartitionGraphExtended() {}
 
-  private static final String INPUT = "input";
-  private static final String OUTPUT = "output";
-  private static final String NUM_NODES = "numNodes";
-  private static final String NUM_PARTITIONS = "numPartitions";
-  private static final String RANGE = "range";
+	private static final String INPUT = "input";
+	private static final String OUTPUT = "output";
+	private static final String NUM_NODES = "numNodes";
+	private static final String NUM_PARTITIONS = "numPartitions";
+	private static final String RANGE = "range";
 
-  /**
-   * Runs this tool.
-   */
-  @SuppressWarnings({ "static-access" })
-  public int run(String[] args) throws Exception {
-    Options options = new Options();
+	/**
+	 * Runs this tool.
+	 */
+	@SuppressWarnings({ "static-access" })
+	public int run(String[] args) throws Exception {
+		Options options = new Options();
 
-    options.addOption(new Option(RANGE, "use range partitioner"));
+		options.addOption(new Option(RANGE, "use range partitioner"));
 
-    options.addOption(OptionBuilder.withArgName("path").hasArg()
-        .withDescription("input path").create(INPUT));
-    options.addOption(OptionBuilder.withArgName("path").hasArg()
-        .withDescription("output path").create(OUTPUT));
-    options.addOption(OptionBuilder.withArgName("num").hasArg()
-        .withDescription("number of nodes").create(NUM_NODES));
-    options.addOption(OptionBuilder.withArgName("num").hasArg()
-        .withDescription("number of partitions").create(NUM_PARTITIONS));
+		options.addOption(OptionBuilder.withArgName("path").hasArg()
+				.withDescription("input path").create(INPUT));
+		options.addOption(OptionBuilder.withArgName("path").hasArg()
+				.withDescription("output path").create(OUTPUT));
+		options.addOption(OptionBuilder.withArgName("num").hasArg()
+				.withDescription("number of nodes").create(NUM_NODES));
+		options.addOption(OptionBuilder.withArgName("num").hasArg()
+				.withDescription("number of partitions").create(NUM_PARTITIONS));
 
-    CommandLine cmdline;
-    CommandLineParser parser = new GnuParser();
+		CommandLine cmdline;
+		CommandLineParser parser = new GnuParser();
 
-    try {
-      cmdline = parser.parse(options, args);
-    } catch (ParseException exp) {
-      System.err.println("Error parsing command line: " + exp.getMessage());
-      return -1;
-    }
+		try {
+			cmdline = parser.parse(options, args);
+		} catch (ParseException exp) {
+			System.err.println("Error parsing command line: " + exp.getMessage());
+			return -1;
+		}
 
-    if (!cmdline.hasOption(INPUT) || !cmdline.hasOption(OUTPUT) ||
-        !cmdline.hasOption(NUM_NODES) || !cmdline.hasOption(NUM_PARTITIONS)) {
-      System.out.println("args: " + Arrays.toString(args));
-      HelpFormatter formatter = new HelpFormatter();
-      formatter.setWidth(120);
-      formatter.printHelp(this.getClass().getName(), options);
-      ToolRunner.printGenericCommandUsage(System.out);
-      return -1;
-    }
+		if (!cmdline.hasOption(INPUT) || !cmdline.hasOption(OUTPUT) ||
+				!cmdline.hasOption(NUM_NODES) || !cmdline.hasOption(NUM_PARTITIONS)) {
+			System.out.println("args: " + Arrays.toString(args));
+			HelpFormatter formatter = new HelpFormatter();
+			formatter.setWidth(120);
+			formatter.printHelp(this.getClass().getName(), options);
+			ToolRunner.printGenericCommandUsage(System.out);
+			return -1;
+		}
 
-    String inPath = cmdline.getOptionValue(INPUT);
-    String outPath = cmdline.getOptionValue(OUTPUT);
-    int nodeCount = Integer.parseInt(cmdline.getOptionValue(NUM_NODES));
+		String inPath = cmdline.getOptionValue(INPUT);
+		String outPath = cmdline.getOptionValue(OUTPUT);
+		int nodeCount = Integer.parseInt(cmdline.getOptionValue(NUM_NODES));
 		int numParts = Integer.parseInt(cmdline.getOptionValue(NUM_PARTITIONS));
 		boolean useRange = cmdline.hasOption(RANGE);
 
@@ -97,7 +97,7 @@ public class PartitionGraphExtended extends Configured implements Tool {
 		LOG.info(" - output dir: " + outPath);
 		LOG.info(" - num partitions: " + numParts);
 		LOG.info(" - node cnt: " + nodeCount);
-    LOG.info(" - use range partitioner: " + useRange);
+		LOG.info(" - use range partitioner: " + useRange);
 
 		Configuration conf = getConf();
 		conf.setInt("NodeCount", nodeCount);
@@ -115,10 +115,10 @@ public class PartitionGraphExtended extends Configured implements Tool {
 		job.setOutputFormatClass(SequenceFileOutputFormat.class);
 
 		job.setMapOutputKeyClass(IntWritable.class);
-		job.setMapOutputValueClass(PageRankNode.class);
+		job.setMapOutputValueClass(PageRankNodeExtended.class);
 
 		job.setOutputKeyClass(IntWritable.class);
-		job.setOutputValueClass(PageRankNode.class);
+		job.setOutputValueClass(PageRankNodeExtended.class);
 
 		if (useRange) {
 			job.setPartitionerClass(RangePartitioner.class);
