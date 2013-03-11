@@ -25,6 +25,7 @@ import java.io.IOException;
 
 import org.apache.hadoop.io.Writable;
 
+import edu.umd.cloud9.io.array.ArrayListOfFloatsWritable;
 import edu.umd.cloud9.io.array.ArrayListOfIntsWritable;
 
 /**
@@ -50,19 +51,36 @@ public class PageRankNodeExtended implements Writable {
 
 	private Type type;
 	private int nodeid;
-	private float pagerank;
+	private ArrayListOfFloatsWritable pageranks;
 	private ArrayListOfIntsWritable adjacenyList;
 
 	public PageRankNodeExtended() {}
 
-	public float getPageRank() {
-		return pagerank;
+	public ArrayListOfFloatsWritable getPageRankArray() {
+		return pageranks;
 	}
 
-	public void setPageRank(float p) {
-		this.pagerank = p;
+	public void setPageRankArray(ArrayListOfFloatsWritable list) {
+		this.pageranks = list;
 	}
-
+	
+	public void setPageRank(int position, float value){
+		if(position > 0 && position < pageranks.size()){
+			pageranks.set(position, value);
+		} else {
+			throw new ArrayIndexOutOfBoundsException("Can't get pagerank at invalid position:" + position);
+		}
+	}
+	
+	public float getPageRank(int position){
+		if(position > 0 && position < pageranks.size()){
+			return pageranks.get(position);
+			
+		} else{
+			throw new ArrayIndexOutOfBoundsException("Can't get pagerank at invalid position:" + position);
+		}
+	}
+	
 	public int getNodeId() {
 		return nodeid;
 	}
@@ -97,16 +115,14 @@ public class PageRankNodeExtended implements Writable {
 		int b = in.readByte();
 		type = mapping[b];
 		nodeid = in.readInt();
-
+		
+		pageranks = new ArrayListOfFloatsWritable();
+		pageranks.readFields(in);
+		
 		if (type.equals(Type.Mass)) {
-			pagerank = in.readFloat();
 			return;
 		}
-
-		if (type.equals(Type.Complete)) {
-			pagerank = in.readFloat();
-		}
-
+		
 		adjacenyList = new ArrayListOfIntsWritable();
 		adjacenyList.readFields(in);
 	}
@@ -120,23 +136,21 @@ public class PageRankNodeExtended implements Writable {
 	public void write(DataOutput out) throws IOException {
 		out.writeByte(type.val);
 		out.writeInt(nodeid);
-
+		pageranks.write(out);
+		
 		if (type.equals(Type.Mass)) {
-			out.writeFloat(pagerank);
 			return;
 		}
-
-		if (type.equals(Type.Complete)) {
-			out.writeFloat(pagerank);
-		}
-
+		
 		adjacenyList.write(out);
 	}
 
 	@Override
 	public String toString() {
 		return String.format("{%d %.4f %s}",
-				nodeid, pagerank, (adjacenyList == null ? "[]" : adjacenyList.toString(10)));
+				nodeid, 
+				(pageranks == null ? "[]" : pageranks.toString(10)), 
+				(adjacenyList == null ? "[]" : adjacenyList.toString(10)) );
 	}
 
 
