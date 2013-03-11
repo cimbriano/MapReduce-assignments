@@ -33,14 +33,14 @@ import edu.umd.cloud9.mapreduce.lib.input.NonSplitableSequenceFileInputFormat;
  * @author Jimmy Lin
  * @author Michael Schatz
  */
-public class PartitionGraph extends Configured implements Tool {
-	private static final Logger LOG = Logger.getLogger(PartitionGraph.class);
+public class PartitionGraphExtended extends Configured implements Tool {
+	private static final Logger LOG = Logger.getLogger(PartitionGraphExtended.class);
 
 	public static void main(String[] args) throws Exception {
-		ToolRunner.run(new PartitionGraph(), args);
+		ToolRunner.run(new PartitionGraphExtended(), args);
 	}
 
-	public PartitionGraph() {}
+	public PartitionGraphExtended() {}
 
   private static final String INPUT = "input";
   private static final String OUTPUT = "output";
@@ -92,7 +92,7 @@ public class PartitionGraph extends Configured implements Tool {
 		int numParts = Integer.parseInt(cmdline.getOptionValue(NUM_PARTITIONS));
 		boolean useRange = cmdline.hasOption(RANGE);
 
-		LOG.info("Tool name: " + PartitionGraph.class.getSimpleName());
+		LOG.info("Tool name: " + PartitionGraphExtended.class.getSimpleName());
 		LOG.info(" - input dir: " + inPath);
 		LOG.info(" - output dir: " + outPath);
 		LOG.info(" - num partitions: " + numParts);
@@ -103,8 +103,8 @@ public class PartitionGraph extends Configured implements Tool {
 		conf.setInt("NodeCount", nodeCount);
 
 		Job job = Job.getInstance(conf);
-		job.setJobName(PartitionGraph.class.getSimpleName() + ":" + inPath);
-		job.setJarByClass(PartitionGraph.class);
+		job.setJobName(PartitionGraphExtended.class.getSimpleName() + ":" + inPath);
+		job.setJarByClass(PartitionGraphExtended.class);
 
 		job.setNumReduceTasks(numParts);
 
