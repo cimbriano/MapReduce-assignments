@@ -59,13 +59,13 @@ public class BuildPersonalizedPageRankRecords extends Configured implements Tool
 
   private static final String NODE_CNT_FIELD = "node.cnt";
 
-  private static class MyMapper extends Mapper<LongWritable, Text, IntWritable, PageRankNode> {
+  private static class MyMapper extends Mapper<LongWritable, Text, IntWritable, PageRankNodeExtended> {
     private static final IntWritable nid = new IntWritable();
-    private static final PageRankNode node = new PageRankNode();
+    private static final PageRankNodeExtended node = new PageRankNodeExtended();
     private static final HashMap<Integer, Integer> sourceIds = new HashMap<Integer, Integer>();
 
     @Override
-    public void setup(Mapper<LongWritable, Text, IntWritable, PageRankNode>.Context context) {
+    public void setup(Mapper<LongWritable, Text, IntWritable, PageRankNodeExtended>.Context context) {
       
       String[] sourceList = context.getConfiguration().getStrings("sources");
       if(sourceList.length == 0){
@@ -80,7 +80,7 @@ public class BuildPersonalizedPageRankRecords extends Configured implements Tool
       if (n == 0) {
         throw new RuntimeException(NODE_CNT_FIELD + " cannot be 0!");
       }
-      node.setType(PageRankNode.Type.Complete);
+      node.setType(PageRankNodeExtended.Type.Complete);
     }
 
     @Override
@@ -110,17 +110,17 @@ public class BuildPersonalizedPageRankRecords extends Configured implements Tool
         
         //TODO Update this for multiple sources
         if(position == 0){
-          node.setPageRank( (float) Math.log(1.0));
+          node.setPageRank( (float) StrictMath.log(1.0));
           LOG.info("DEBUG: Source node found: adding page rank of " + node.getPageRank() + " to " + nodeId);
           
         } else {
-          node.setPageRank( (float) Math.log(0.0));
+          node.setPageRank( (float) StrictMath.log(0.0));
           LOG.info("DEBUG: NodeId: " + nodeId + " is not the single source. Getting pagerank: " + node.getPageRank());
           
         }
         
       } else {
-        node.setPageRank( (float) Math.log(0.0));
+        node.setPageRank( (float) StrictMath.log(0.0));
         LOG.info("DEBUG: NodeId: " + nodeId + " is not a source. Getting pagerank: " + node.getPageRank());
       }
       
@@ -212,10 +212,10 @@ public class BuildPersonalizedPageRankRecords extends Configured implements Tool
     job.setOutputFormatClass(SequenceFileOutputFormat.class);
 
     job.setMapOutputKeyClass(IntWritable.class);
-    job.setMapOutputValueClass(PageRankNode.class);
+    job.setMapOutputValueClass(PageRankNodeExtended.class);
 
     job.setOutputKeyClass(IntWritable.class);
-    job.setOutputValueClass(PageRankNode.class);
+    job.setOutputValueClass(PageRankNodeExtended.class);
 
     job.setMapperClass(MyMapper.class);
     
