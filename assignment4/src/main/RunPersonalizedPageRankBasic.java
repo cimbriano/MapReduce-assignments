@@ -341,25 +341,57 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 
 			//If this is a source node, give it the missing mass and the jump mass
 			//Otherwise, nothing.
-
-			if(sourceIdToPosition.containsKey(nid.get())){
-				int position = sourceIdToPosition.get(nid.get());
-
-				LOG.info("Adding missing mass to source : " + nid.get() + " in position: " + position);
-
-				ArrayListOfFloatsWritable p = node.getPageRankArray();
-
-				float jump = (float) Math.log(ALPHA);
-				float link = (float) Math.log(1.0f - ALPHA)
-						+ sumLogProbs(p.get(position), (float) Math.log(missingMass));
-
-				p.set(position, sumLogProbs(jump, link));
-				node.setPageRankArray(p);
-
-
+			ArrayListOfFloatsWritable pageranks = node.getPageRankArray();
+			for(int i = 0; i < sourceIdToPosition.size(); i++){
+				
+				//Update each of the pagerank positions in node
+				float jump = Float.NEGATIVE_INFINITY;
+				float link = Float.NEGATIVE_INFINITY;
+				
+				if(sourceIdToPosition.containsKey(nid.get())){
+					int sourcePosition = sourceIdToPosition.get(nid.get());
+					
+					if(sourcePosition == i){
+						jump = (float) Math.log(ALPHA);
+						link = (float) Math.log(1.0f - ALPHA)
+								+ sumLogProbs(pageranks.get(i), (float) Math.log(missingMass));
+					} else {
+						link = (float) Math.log(1.0f - ALPHA) + pageranks.get(i);
+					}
+					
+				} else {
+					link = (float) Math.log(1.0f - ALPHA) + pageranks.get(i);
+				}
+				
+				pageranks.set(i, sumLogProbs(jump, link));
+				
 			}
-
 			context.write(nid, node);
+
+			
+			
+
+//			if(sourceIdToPosition.containsKey(nid.get())){
+//				int position = sourceIdToPosition.get(nid.get());
+//
+//				LOG.info("Adding missing mass to source : " + nid.get() + " in position: " + position);
+//
+//				ArrayListOfFloatsWritable p = node.getPageRankArray();
+//
+//				float jump = (float) Math.log(ALPHA);
+//				float link = (float) Math.log(1.0f - ALPHA)
+//						+ sumLogProbs(p.get(position), (float) Math.log(missingMass));
+//
+//				p.set(position, sumLogProbs(jump, link));
+//				node.setPageRankArray(p);
+//
+//
+//			} else {
+//				float link = (float) Math.log(1.0f - ALPHA)
+//						+ sumLogProbs(p.get(position), (float) Math.log(missingMass));
+//			}
+//
+//			context.write(nid, node);
 		}
 	}
 
