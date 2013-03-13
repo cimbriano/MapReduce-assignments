@@ -81,7 +81,7 @@ public class ExtractTopPersonalizedPageRankNodes implements Tool {
 	private void getTopNodes(String inputPathString, String sourcesString, int numResults) throws IOException, InstantiationException, IllegalAccessException {
 
 		Configuration conf = new Configuration();
-		Path inputPath = new Path(inputPathString + "/part-m-00000");
+		Path inputPath = new Path(inputPathString);
 		@SuppressWarnings("deprecation")
 		SequenceFile.Reader reader = new SequenceFile.Reader(FileSystem.get(conf), inputPath, conf);
 
