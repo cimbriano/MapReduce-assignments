@@ -95,8 +95,6 @@ public class ExtractTopPersonalizedPageRankNodes implements Tool {
 		for(FileStatus stat : fs.listStatus(inputPath)){
 
 			Path filePath = stat.getPath();
-
-			System.out.println(" - filePath: " + filePath);
 			
 			@SuppressWarnings("deprecation")
 			SequenceFile.Reader reader = new SequenceFile.Reader(FileSystem.get(conf), filePath, conf);
@@ -104,22 +102,16 @@ public class ExtractTopPersonalizedPageRankNodes implements Tool {
 			IntWritable key = (IntWritable) reader.getKeyClass().newInstance();
 			PageRankNodeExtended value = (PageRankNodeExtended) reader.getValueClass().newInstance();
 			
-			
-
-
 			while(reader.next(key, value)){
-
 				for(int i = 0; i < sources.length; i++){
 					queueList.get(i).add(key.get(), value.getPageRank(i));
 				}
-
 			}
 			reader.close();
-
 		}
 		
+		
 		for(int i = 0; i < sources.length; i++){
-
 			System.out.println("Source: " + sources[i]);
 			//Print out top k
 			TopNScoredObjects<Integer> list = queueList.get(i);
@@ -129,9 +121,7 @@ public class ExtractTopPersonalizedPageRankNodes implements Tool {
 				float pagerank = (float) Math.exp(pair.getRightElement());
 				System.out.println(String.format("%.5f %d", pagerank, nodeid));
 			}
-
 			System.out.println("");
-
 		}
 	}
 
