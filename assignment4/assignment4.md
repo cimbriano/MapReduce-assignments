@@ -1,8 +1,6 @@
 * Running Project: 
-	- I am able to run multiple source locally without issue, and the resutls seem to match those on the course webpage
-
-	- Running the same code on the VM gives strange inconsistent results.  Some tasks fail, but evetually the jobs complete.
-
+	- I am able to run multiple source in the VM and on my local machine
+	- Note: The test commands on the website leave out the in-mapper combiner and regular combiner flags, so I don't have either of those parts implemented
 
 
 

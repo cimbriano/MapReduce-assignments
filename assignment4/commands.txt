@@ -1,14 +1,14 @@
 hadoop fs -mkdir data
 
-etc/hadoop-cluster.sh BuildPersonalizedPageRankRecords -input data/sample-large.txt -output data/imbriano-records -numNodes 1458 -sources 9627181,9370233,10207721
+etc/hadoop-cluster.sh BuildPersonalizedPageRankRecords -input data/sample-large.txt -output data/imbriano-records -numNodes 1458 -sources 9470136,9300650
 
 hadoop fs -mkdir imbriano-pagerank-out
 
 etc/hadoop-cluster.sh PartitionGraphExtended -input data/imbriano-records -output imbriano-pagerank-out/iter0000 -numPartitions 5 -numNodes 1458
 
-etc/hadoop-cluster.sh RunPersonalizedPageRankBasic -base imbriano-pagerank-out -numNodes 1458 -start 0 -end 20 -sources 9627181,9370233,10207721
+etc/hadoop-cluster.sh RunPersonalizedPageRankBasic -base imbriano-pagerank-out -numNodes 1458 -start 0 -end 20 -sources 9470136,9300650
 
-etc/hadoop-cluster.sh ExtractTopPersonalizedPageRankNodes -input imbriano-pagerank-out/iter0020 -top 10 -sources 9627181,9370233,10207721
+etc/hadoop-cluster.sh ExtractTopPersonalizedPageRankNodes -input imbriano-pagerank-out/iter0020 -top 10 -sources 9470136,9300650
 
 
 
