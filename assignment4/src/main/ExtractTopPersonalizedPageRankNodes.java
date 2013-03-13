@@ -82,6 +82,10 @@ public class ExtractTopPersonalizedPageRankNodes implements Tool {
 	private void getTopNodes(String inputPathString, String sourcesString, int numResults) throws IOException, InstantiationException, IllegalAccessException {
 		String[] sources = sourcesString.split(",");
 		ArrayList<TopNScoredObjects<Integer>> queueList = new ArrayList<TopNScoredObjects<Integer>>();
+		for(int i = 0; i < sources.length; i++){
+			queueList.add(i, new TopNScoredObjects<Integer>(numResults));
+		}
+		
 		
 		Configuration conf = new Configuration();
 		Path inputPath = new Path(inputPathString);
@@ -100,9 +104,7 @@ public class ExtractTopPersonalizedPageRankNodes implements Tool {
 			IntWritable key = (IntWritable) reader.getKeyClass().newInstance();
 			PageRankNodeExtended value = (PageRankNodeExtended) reader.getValueClass().newInstance();
 			
-			for(int i = 0; i < sources.length; i++){
-				queueList.add(i, new TopNScoredObjects<Integer>(numResults));
-			}
+			
 
 
 			while(reader.next(key, value)){
