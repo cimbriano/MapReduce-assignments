@@ -133,15 +133,10 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 				}
 
 
-				//				float mass = node.getPageRank() - (float) StrictMath.log(list.size());
-				//				LOG.info( node.getNodeId() + " distributing " + node.getPageRank() + " total over " + list.size() + " neighbors. Each: " + mass + " pagerank.");
-
 				context.getCounter(PageRank.edges).increment(list.size());
 
 				// Iterate over neighbors.
-				String neighborsString = "Neighbors of " + node.getNodeId(); 
 				for (int i = 0; i < list.size(); i++) {
-					neighborsString += "\t" + list.get(i) + "\t";
 
 					neighbor.set(list.get(i));
 					intermediateMass.setNodeId(list.get(i));
@@ -154,8 +149,6 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 					context.write(neighbor, intermediateMass);
 					massMessages++;
 				}
-
-				LOG.info(neighborsString);
 
 			}
 
@@ -235,8 +228,6 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 			
 			while (values.hasNext()) {
 				PageRankNodeExtended n = values.next();
-				LOG.info("Reconstructing node: " + node.getNodeId());
-
 
 				if (n.getType().equals(PageRankNodeExtended.Type.Structure)) {
 					LOG.info(" - Got a structure node");
@@ -247,22 +238,17 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 					node.setAdjacencyList(list);
 				} else {
 					// This is a message that contains PageRank mass; accumulate.
-					LOG.info(" - Got an intermediate mass node");
-//					LOG.info(" - Accumulating mass: " + n.getPageRank());
-					
 					
 					ArrayListOfFloatsWritable pageranks = n.getPageRankArray();
 					for(int i = 0; i < masses.length; i++){
 						masses[i] = sumLogProbs(masses[i], pageranks.get(i));
 					}
 					
-//					mass = sumLogProbs(mass, n.getPageRank());
 					massMessagesReceived++;
 				}
 			}
 
 			// Update the final accumulated PageRank mass.
-			LOG.info("Done accumulating mass: " + masses);
 			
 			//TODO Maybe inefficient here
 			node.setPageRankArray(new ArrayListOfFloatsWritable(masses));
@@ -280,8 +266,6 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 				// corresponding node structure (i.e., PageRank mass was passed to a non-existent node)...
 				// log and count but move on.
 				context.getCounter(PageRank.missingStructure).increment(1);
-				LOG.warn("No structure received for nodeid: " + nid.get() + " mass: "
-						+ massMessagesReceived);
 				// It's important to note that we don't add the PageRank mass to total... if PageRank mass
 				// was sent to a non-existent node, it should simply vanish.
 			} else {
@@ -320,8 +304,6 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 			Configuration conf = context.getConfiguration();
 
 			missingMass = conf.getFloat("MissingMass", 0.0f);			
-			LOG.info("MissingMass (normal scale): " + missingMass);
-
 
 			String[] sourceList = context.getConfiguration().getStrings("sources");
 			if(sourceList.length == 0){
@@ -367,31 +349,6 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 				
 			}
 			context.write(nid, node);
-
-			
-			
-
-//			if(sourceIdToPosition.containsKey(nid.get())){
-//				int position = sourceIdToPosition.get(nid.get());
-//
-//				LOG.info("Adding missing mass to source : " + nid.get() + " in position: " + position);
-//
-//				ArrayListOfFloatsWritable p = node.getPageRankArray();
-//
-//				float jump = (float) Math.log(ALPHA);
-//				float link = (float) Math.log(1.0f - ALPHA)
-//						+ sumLogProbs(p.get(position), (float) Math.log(missingMass));
-//
-//				p.set(position, sumLogProbs(jump, link));
-//				node.setPageRankArray(p);
-//
-//
-//			} else {
-//				float link = (float) Math.log(1.0f - ALPHA)
-//						+ sumLogProbs(p.get(position), (float) Math.log(missingMass));
-//			}
-//
-//			context.write(nid, node);
 		}
 	}
 

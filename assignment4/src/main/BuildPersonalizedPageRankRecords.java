@@ -104,16 +104,13 @@ public class BuildPersonalizedPageRankRecords extends Configured implements Tool
 				node.setAdjacencyList(new ArrayListOfIntsWritable(neighbors));
 			}
 
-			int nodeId = nid.get();
 			float[] pageranks = new float[sourceIds.size()];
 			for(int sourceId : sourceIds.keySet()){
 				int position = sourceIds.get(sourceId);
 
 				if(node.getNodeId() == sourceId){
-					LOG.info("DEBUG: Source node found: adding default pagerank of 0.0 to " + nodeId);
 					pageranks[position] = (float) StrictMath.log(1.0);
 				} else {
-					LOG.info("DEBUG: NodeId: " + nodeId + " is not a source. Getting pagerank: -Infinity");
 					pageranks[position] = (float) StrictMath.log(0.0);
 				}
 
