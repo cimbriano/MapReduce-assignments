@@ -22,8 +22,8 @@ import edu.umd.cloud9.util.TopNScoredObjects;
 import edu.umd.cloud9.util.pair.PairOfObjectFloat;
 
 
-public class Extract implements Tool {
-	private static final Logger LOG = Logger.getLogger(Extract.class);
+public class ExtractTopPersonalizedPageRankNodes implements Tool {
+	private static final Logger LOG = Logger.getLogger(ExtractTopPersonalizedPageRankNodes.class);
 
 	
 	private static final String INPUT = "input";
@@ -69,7 +69,7 @@ public class Extract implements Tool {
 		int n = Integer.parseInt(cmdline.getOptionValue(TOP));
 		String sourcesString = cmdline.getOptionValue(SOURCES);
 
-		LOG.info("Tool name: " + Extract.class.getSimpleName());
+		LOG.info("Tool name: " + ExtractTopPersonalizedPageRankNodes.class.getSimpleName());
 		LOG.info(" - input: " + inputPath);
 		LOG.info(" - top: " + n);
 		LOG.info(" - sources: " + sourcesString);
@@ -154,7 +154,7 @@ public class Extract implements Tool {
 	 * @throws Exception 
 	 */
 	public static void main(String[] args) throws Exception {
-		ToolRunner.run(new Extract(), args);
+		ToolRunner.run(new ExtractTopPersonalizedPageRankNodes(), args);
 	}
 
 	@Override
