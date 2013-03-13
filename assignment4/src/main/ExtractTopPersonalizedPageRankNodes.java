@@ -25,15 +25,15 @@ import edu.umd.cloud9.util.pair.PairOfObjectFloat;
 public class ExtractTopPersonalizedPageRankNodes implements Tool {
 	private static final Logger LOG = Logger.getLogger(ExtractTopPersonalizedPageRankNodes.class);
 
-	
+
 	private static final String INPUT = "input";
 	private static final String TOP = "top";
 	private static final String SOURCES = "sources";
-	
+
 	@SuppressWarnings("static-access")
 	@Override
 	public int run(String[] args) throws Exception {
-		
+
 		Options options = new Options();
 
 		options.addOption(OptionBuilder.withArgName("path").hasArg()
@@ -72,9 +72,9 @@ public class ExtractTopPersonalizedPageRankNodes implements Tool {
 		LOG.info(" - input: " + inputPath);
 		LOG.info(" - top: " + n);
 		LOG.info(" - sources: " + sourcesString);
-		
+
 		getTopNodes(inputPath, sourcesString, n);
-		
+
 		return 0;
 	}
 
@@ -82,70 +82,45 @@ public class ExtractTopPersonalizedPageRankNodes implements Tool {
 
 		Configuration conf = new Configuration();
 		Path inputPath = new Path(inputPathString + "/part-m-00000");
+		@SuppressWarnings("deprecation")
 		SequenceFile.Reader reader = new SequenceFile.Reader(FileSystem.get(conf), inputPath, conf);
-		
+
 		IntWritable key = (IntWritable) reader.getKeyClass().newInstance();
 		PageRankNodeExtended value = (PageRankNodeExtended) reader.getValueClass().newInstance();
-		
+
 		ArrayList<TopNScoredObjects<Integer>> queueList = new ArrayList<TopNScoredObjects<Integer>>();
 		String[] sources = sourcesString.split(",");
 		for(int i = 0; i < sources.length; i++){
 			queueList.add(i, new TopNScoredObjects<Integer>(numResults));
 		}
-		
-		
+
+
 		while(reader.next(key, value)){
-			
+
 			for(int i = 0; i < sources.length; i++){
 				queueList.get(i).add(key.get(), value.getPageRank(i));
 			}
-			
+
 		}
 		reader.close();
-		
-		
+
+
 		for(int i = 0; i < sources.length; i++){
-			
+
 			System.out.println("Source: " + sources[i]);
 			//Print out top k
 			TopNScoredObjects<Integer> list = queueList.get(i);
 			for(PairOfObjectFloat<Integer> pair : list.extractAll()){
-				
+
 				int nodeid = ((Integer) pair.getLeftElement());
 				float pagerank = (float) Math.exp(pair.getRightElement());
 				System.out.println(String.format("%.5f %d", pagerank, nodeid));
 			}
-			
+
 			System.out.println("");
-			
+
 		}
-		
-		
-//		String[] sources = sourcesString.split(",");
-//		
-//		// Write to a file the amount of PageRank mass we've seen in this reducer.
-//		Configuration conf = new Configuration();
-//		FileSystem fs = FileSystem.get(conf);
-//		FSDataInputStream in = fs.open(new Path(inputPath));
-//		FSDataOutputStream out = fs.create(new Path(outputPath), false);
-//		
-//					
-//		
-//		for(String source : sources){
-//			TopNScoredObjects<Integer> queue = new TopNScoredObjects<Integer>(numResults);
-//			
-//			
-//			
-//			//Write out
-//			// Source: <source>
-//			//	each of the top numResults items
-//			
-//		}
-		
-		
-//		out.close();
-		
-		
+
 	}
 
 	/**
