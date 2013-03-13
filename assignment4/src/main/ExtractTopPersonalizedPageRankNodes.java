@@ -10,6 +10,7 @@ import org.apache.commons.cli.OptionBuilder;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
@@ -79,32 +80,42 @@ public class ExtractTopPersonalizedPageRankNodes implements Tool {
 	}
 
 	private void getTopNodes(String inputPathString, String sourcesString, int numResults) throws IOException, InstantiationException, IllegalAccessException {
-
+		String[] sources = sourcesString.split(",");
+		ArrayList<TopNScoredObjects<Integer>> queueList = new ArrayList<TopNScoredObjects<Integer>>();
+		
 		Configuration conf = new Configuration();
 		Path inputPath = new Path(inputPathString);
-		@SuppressWarnings("deprecation")
-		SequenceFile.Reader reader = new SequenceFile.Reader(FileSystem.get(conf), inputPath, conf);
+		FileSystem fs = FileSystem.get(conf);
+		fs.delete(new Path(inputPathString + "/_SUCCESS"), true);
+		
+		for(FileStatus stat : fs.listStatus(inputPath)){
 
-		IntWritable key = (IntWritable) reader.getKeyClass().newInstance();
-		PageRankNodeExtended value = (PageRankNodeExtended) reader.getValueClass().newInstance();
+			Path filePath = stat.getPath();
 
-		ArrayList<TopNScoredObjects<Integer>> queueList = new ArrayList<TopNScoredObjects<Integer>>();
-		String[] sources = sourcesString.split(",");
-		for(int i = 0; i < sources.length; i++){
-			queueList.add(i, new TopNScoredObjects<Integer>(numResults));
-		}
-
-
-		while(reader.next(key, value)){
-
+			System.out.println(" - filePath: " + filePath);
+			
+			@SuppressWarnings("deprecation")
+			SequenceFile.Reader reader = new SequenceFile.Reader(FileSystem.get(conf), filePath, conf);
+			
+			IntWritable key = (IntWritable) reader.getKeyClass().newInstance();
+			PageRankNodeExtended value = (PageRankNodeExtended) reader.getValueClass().newInstance();
+			
 			for(int i = 0; i < sources.length; i++){
-				queueList.get(i).add(key.get(), value.getPageRank(i));
+				queueList.add(i, new TopNScoredObjects<Integer>(numResults));
 			}
 
+
+			while(reader.next(key, value)){
+
+				for(int i = 0; i < sources.length; i++){
+					queueList.get(i).add(key.get(), value.getPageRank(i));
+				}
+
+			}
+			reader.close();
+
 		}
-		reader.close();
-
-
+		
 		for(int i = 0; i < sources.length; i++){
 
 			System.out.println("Source: " + sources[i]);
@@ -120,7 +131,6 @@ public class ExtractTopPersonalizedPageRankNodes implements Tool {
 			System.out.println("");
 
 		}
-
 	}
 
 	/**
