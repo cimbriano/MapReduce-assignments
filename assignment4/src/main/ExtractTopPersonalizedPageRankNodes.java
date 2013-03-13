@@ -33,7 +33,6 @@ public class ExtractTopPersonalizedPageRankNodes implements Tool {
 	@SuppressWarnings("static-access")
 	@Override
 	public int run(String[] args) throws Exception {
-		// TODO Auto-generated method stub
 		
 		Options options = new Options();
 
@@ -159,14 +158,11 @@ public class ExtractTopPersonalizedPageRankNodes implements Tool {
 
 	@Override
 	public Configuration getConf() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
 	public void setConf(Configuration arg0) {
-		// TODO Auto-generated method stub
-		
 	}
 
 

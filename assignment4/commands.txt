@@ -8,7 +8,7 @@ etc/hadoop-cluster.sh PartitionGraphExtended -input data/imbriano-records -outpu
 
 etc/hadoop-cluster.sh RunPersonalizedPageRankBasic -base imbriano-pagerank-out -numNodes 1458 -start 0 -end 20 -sources 9627181,9370233,10207721
 
-etc/hadoop-cluster.sh ExtractPersonalizedPageRankNodes -input imbriano-pagerank-out/iter0020 -top 10 -sources 9627181,9370233,10207721
+etc/hadoop-cluster.sh ExtractTopPersonalizedPageRankNodes -input imbriano-pagerank-out/iter0020 -top 10 -sources 9627181,9370233,10207721
 
 
 

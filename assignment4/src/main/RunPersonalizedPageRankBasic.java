@@ -127,9 +127,10 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 				// Each neighbor gets an equal share of PageRank mass.
 				ArrayListOfIntsWritable list = node.getAdjacenyList();
 
-				float[] masses = node.getPageRankArray().getArray();
-				for(int i = 0; i < masses.length; i++){
-					masses[i] = masses[i] - (float) StrictMath.log(list.size());
+				ArrayListOfFloatsWritable masses = node.getPageRankArray();
+								
+				for(int i = 0; i < masses.size(); i++){
+					masses.set(i, masses.get(i) - (float) StrictMath.log(list.size()));
 				}
 
 
@@ -142,8 +143,7 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 					intermediateMass.setNodeId(list.get(i));
 					intermediateMass.setType(PageRankNodeExtended.Type.Mass);
 
-					//TODO This might be inefficient to create a new object here.
-					intermediateMass.setPageRankArray(new ArrayListOfFloatsWritable(masses));
+					intermediateMass.setPageRankArray(masses);
 
 					// Emit messages with PageRank mass to neighbors.
 					context.write(neighbor, intermediateMass);
@@ -230,7 +230,6 @@ public class RunPersonalizedPageRankBasic extends Configured implements Tool {
 				PageRankNodeExtended n = values.next();
 
 				if (n.getType().equals(PageRankNodeExtended.Type.Structure)) {
-					LOG.info(" - Got a structure node");
 					// This is the structure; update accordingly.
 					ArrayListOfIntsWritable list = n.getAdjacenyList();
 					structureReceived++;
