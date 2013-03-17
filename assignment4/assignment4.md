@@ -28,3 +28,14 @@ Source: 9300650
 0.01302 9785148
 0.01302 8846237
 0.01302 11890488
+
+Grading
+=======
+
+There appears to be a bug in your multi-source implementation. The
+personalized PageRank with respect to the first source looks right,
+but not the second source. -8 points.
+
+Score: 27/35
+
+-Jimmy
