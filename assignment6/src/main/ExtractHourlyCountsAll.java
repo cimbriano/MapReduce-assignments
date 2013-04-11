@@ -9,21 +9,34 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.Mapper;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.apache.log4j.Logger;
 
 import cern.colt.Arrays;
+import edu.umd.cloud9.io.pair.PairOfStringInt;
 
-public class EgyptOrCairoPerHour extends Configured implements Tool {
-  private static final Logger LOG = Logger.getLogger(EgyptOrCairoPerHour.class);
+public class ExtractHourlyCountsAll extends Configured implements Tool {
+  private static final Logger LOG = Logger.getLogger(ExtractHourlyCountsAll.class);
+  
+  public static class TweetsMapper extends Mapper<LongWritable, Text, PairOfStringInt, IntWritable>{
+    
+  }
+  
+  
 
 
   /**
    * Creates an instance of this tool.
    */
-  public EgyptOrCairoPerHour() {}
+  public ExtractHourlyCountsAll() {}
 
   private static final String INPUT = "input";
   private static final String OUTPUT = "output";
@@ -67,18 +80,32 @@ public class EgyptOrCairoPerHour extends Configured implements Tool {
     int reduceTasks = cmdline.hasOption(NUM_REDUCERS) ?
         Integer.parseInt(cmdline.getOptionValue(NUM_REDUCERS)) : 1;
 
-    LOG.info("Tool: " + EgyptOrCairoPerHour.class.getSimpleName());
+    LOG.info("Tool: " + ExtractHourlyCountsAll.class.getSimpleName());
     LOG.info(" - input path: " + inputPath);
     LOG.info(" - output path: " + outputPath);
     LOG.info(" - number of reducers: " + reduceTasks);
 
     Configuration conf = getConf();
     Job job = Job.getInstance(conf);
-    job.setJobName(EgyptOrCairoPerHour.class.getSimpleName());
-    job.setJarByClass(EgyptOrCairoPerHour.class);
+    job.setJobName(ExtractHourlyCountsAll.class.getSimpleName());
+    job.setJarByClass(ExtractHourlyCountsAll.class);
 
     job.setNumReduceTasks(reduceTasks);
 
+    FileInputFormat.addInputPath(job, new Path(inputPath));
+    FileOutputFormat.setOutputPath(job, new Path(outputPath));
+
+    // job.setInputFormatClass(TextInputFormat.class);
+    // job.setOutputFormatClass(TextOutputFormat.class);
+
+
+    // job.setMapOutputKeyClass(IntWritable.class);
+    // job.setMapOutputValueClass(PageRankNodeExtended.class);
+
+    // job.setOutputKeyClass(IntWritable.class);
+    // job.setOutputValueClass(PageRankNodeExtended.class);
+
+    // job.setMapperClass(MyMapper.class);
 
 
     // Delete the output directory if it exists already.
@@ -97,6 +124,6 @@ public class EgyptOrCairoPerHour extends Configured implements Tool {
    * Dispatches command-line arguments to the tool via the {@code ToolRunner}.
    */
   public static void main(String[] args) throws Exception {
-    ToolRunner.run(new EgyptOrCairoPerHour(), args);
+    ToolRunner.run(new ExtractHourlyCountsAll(), args);
   }
 }

@@ -16,14 +16,14 @@ import org.apache.log4j.Logger;
 
 import cern.colt.Arrays;
 
-public class TweetsPerHour extends Configured implements Tool {
-  private static final Logger LOG = Logger.getLogger(TweetsPerHour.class);
+public class ExtractHourlyCountsEgypt extends Configured implements Tool {
+  private static final Logger LOG = Logger.getLogger(ExtractHourlyCountsEgypt.class);
 
 
   /**
    * Creates an instance of this tool.
    */
-  public TweetsPerHour() {}
+  public ExtractHourlyCountsEgypt() {}
 
   private static final String INPUT = "input";
   private static final String OUTPUT = "output";
@@ -67,15 +67,15 @@ public class TweetsPerHour extends Configured implements Tool {
     int reduceTasks = cmdline.hasOption(NUM_REDUCERS) ?
         Integer.parseInt(cmdline.getOptionValue(NUM_REDUCERS)) : 1;
 
-    LOG.info("Tool: " + TweetsPerHour.class.getSimpleName());
+    LOG.info("Tool: " + ExtractHourlyCountsEgypt.class.getSimpleName());
     LOG.info(" - input path: " + inputPath);
     LOG.info(" - output path: " + outputPath);
     LOG.info(" - number of reducers: " + reduceTasks);
 
     Configuration conf = getConf();
     Job job = Job.getInstance(conf);
-    job.setJobName(TweetsPerHour.class.getSimpleName());
-    job.setJarByClass(TweetsPerHour.class);
+    job.setJobName(ExtractHourlyCountsEgypt.class.getSimpleName());
+    job.setJarByClass(ExtractHourlyCountsEgypt.class);
 
     job.setNumReduceTasks(reduceTasks);
 
@@ -97,6 +97,6 @@ public class TweetsPerHour extends Configured implements Tool {
    * Dispatches command-line arguments to the tool via the {@code ToolRunner}.
    */
   public static void main(String[] args) throws Exception {
-    ToolRunner.run(new TweetsPerHour(), args);
+    ToolRunner.run(new ExtractHourlyCountsEgypt(), args);
   }
 }
