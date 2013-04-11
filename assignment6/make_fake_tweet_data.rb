@@ -1,8 +1,8 @@
 require 'randexp'
 require 'faker'
 
-File.open("tweets_local.txt", 'w') do |file|
-	100.times do
+File.open("tweets2011.txt", 'w') do |file|
+	1000.times do
 
 		# Ugly way to make a tweet id from 5 random ints up to 100
 		tweet_id = Array.new(5){rand 100}.map {|e| e.to_s}.inject(""){ |acc, ele| acc << ele }
