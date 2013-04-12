@@ -39,6 +39,8 @@ public class ExtractHourlyCountsAll extends Configured implements Tool {
     @Override
     public void map(LongWritable key, Text text, Context context) throws IOException, InterruptedException {
       
+      //TODO Refactor this junk
+      
       String[] rawTweet = text.toString().split("\t");
       
       String tweetID  = rawTweet[0];
@@ -127,8 +129,8 @@ public class ExtractHourlyCountsAll extends Configured implements Tool {
 //        Integer.parseInt(cmdline.getOptionValue(NUM_REDUCERS)) : 1;
 
     
-    String inputPath = "";
-    String outputPath = "";
+    String inputPath = "tweets2011.txt";
+    String outputPath = "countsAll_out";
     
     LOG.info("Tool: " + ExtractHourlyCountsAll.class.getSimpleName());
     LOG.info(" - input path: " + inputPath);
