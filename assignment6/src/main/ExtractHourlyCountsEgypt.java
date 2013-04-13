@@ -129,8 +129,8 @@ public class ExtractHourlyCountsEgypt extends Configured implements Tool {
     //    int reduceTasks = cmdline.hasOption(NUM_REDUCERS) ?
     //        Integer.parseInt(cmdline.getOptionValue(NUM_REDUCERS)) : 1;
 
-    String inputPath = "tweets2011_egypt.txt";
-    String outputPath = "egyptCounts_out";
+    String inputPath = "/user/shared/tweets2011/tweets2011.txt";
+    String outputPath = "imbriano_egypt_out";
 
     LOG.info("Tool: " + ExtractHourlyCountsEgypt.class.getSimpleName());
     LOG.info(" - input path: " + inputPath);

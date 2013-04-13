@@ -127,8 +127,8 @@ public class ExtractHourlyCountsAll extends Configured implements Tool {
     //        Integer.parseInt(cmdline.getOptionValue(NUM_REDUCERS)) : 1;
 
 
-    String inputPath = "tweets2011.txt";
-    String outputPath = "countsAll_out";
+    String inputPath = "/user/shared/tweets2011/tweets2011.txt";
+    String outputPath = "imbriano_all_out";
 
     LOG.info("Tool: " + ExtractHourlyCountsAll.class.getSimpleName());
     LOG.info(" - input path: " + inputPath);
