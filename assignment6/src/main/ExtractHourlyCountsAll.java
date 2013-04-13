@@ -28,7 +28,7 @@ public class ExtractHourlyCountsAll extends Configured implements Tool {
     public static final Text DATE_HOUR = new Text();
     public static final IntWritable ONE = new IntWritable(1);
 
-    public static String[] rawTweet = null;
+    public static String[] rawTweetAndMetadata = null;
     public static String[] rawDateTime = null;
     public static String month = null;
     public static String day = null;
@@ -37,8 +37,17 @@ public class ExtractHourlyCountsAll extends Configured implements Tool {
     @Override
     public void map(LongWritable key, Text text, Context context) throws IOException, InterruptedException {
 
-      rawTweet = text.toString().split("\t");
-      rawDateTime = rawTweet[1].split(" ");
+      
+      
+      rawTweetAndMetadata = text.toString().split("\t");
+      LOG.info("rawTweetAndMetadata array: " + rawTweetAndMetadata);
+      LOG.info("Tweet array size: " + rawTweetAndMetadata.length);
+      
+      
+      LOG.info("rawDateTime: string" + rawTweetAndMetadata[1]);
+      rawDateTime = rawTweetAndMetadata[1].split(" ");
+      LOG.info("rawDateTime: array" + rawDateTime);
+      
       month = rawDateTime[0].equals("Jan") ? "01" : "02";
       day = rawDateTime[2];
       hour = rawDateTime[3].split(":")[0];
