@@ -26,25 +26,27 @@ public class ExtractHourlyCountsEgypt extends Configured implements Tool {
     //  public static final PairOfStringInt DATE_HOUR= new PairOfStringInt();
     public static final Text DATE_HOUR = new Text();
     public static final IntWritable ONE = new IntWritable(1);
+    
+    public static String[] rawTweet = null;
+    public static String[] rawDateTime = null;
+    public static String month = null;
+    public static String day = null;
+    public static String hour = null;
+    public static String tweetText = null;
 
     @Override
     public void map(LongWritable key, Text text, Context context) throws IOException, InterruptedException {
 
-      //TODO Refactor this junk
 
-      String[] rawTweet = text.toString().split("\t");
+      rawTweet = text.toString().split("\t");
+      rawDateTime = rawTweet[1].split(" ");
+      tweetText = rawTweet[3];
+      
+      month = rawDateTime[0].equals("Jan") ? "01" : "02";
+      day = rawDateTime[2];
+      hour = rawDateTime[3].split(":")[0];
 
-      String tweetID  = rawTweet[0];
-      String[] rawDateTime = rawTweet[1].split(" ");
-
-      String month = rawDateTime[0].equals("Jan") ? "01" : "02";
-      String day = rawDateTime[2];
-      String hour = rawDateTime[3].split(":")[0];
-
-      String userID = rawTweet[2];
-      String tweetText = rawTweet[3];
-
-      DATE_HOUR.set( month + day + hour);
+      DATE_HOUR.set( month + "/" + day + " " + hour);
 
       if(tweetText.matches(".*([Ee][Gg][Yy][Pp][Tt]|[Cc][Aa][Ii][Rr][Oo]).*")){
         context.write(DATE_HOUR, ONE);
@@ -127,7 +129,7 @@ public class ExtractHourlyCountsEgypt extends Configured implements Tool {
     //    int reduceTasks = cmdline.hasOption(NUM_REDUCERS) ?
     //        Integer.parseInt(cmdline.getOptionValue(NUM_REDUCERS)) : 1;
 
-    String inputPath = "tweets2011.txt";
+    String inputPath = "tweets2011_egypt.txt";
     String outputPath = "egyptCounts_out";
 
     LOG.info("Tool: " + ExtractHourlyCountsEgypt.class.getSimpleName());
