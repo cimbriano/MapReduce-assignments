@@ -39,10 +39,12 @@ public class ExtractHourlyCountsEgypt extends Configured implements Tool {
 
 
       rawTweet = text.toString().split("\t");
+      if(rawTweet.length < 4)   return;
+      
       rawDateTime = rawTweet[1].split(" ");
       tweetText = rawTweet[3];
       
-      month = rawDateTime[0].equals("Jan") ? "01" : "02";
+      month = rawDateTime[1].contains("Jan") ? "01" : "02";
       day = rawDateTime[2];
       hour = rawDateTime[3].split(":")[0];
 

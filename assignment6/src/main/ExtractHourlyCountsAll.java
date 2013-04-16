@@ -40,15 +40,23 @@ public class ExtractHourlyCountsAll extends Configured implements Tool {
       
       
       rawTweetAndMetadata = text.toString().split("\t");
-      LOG.info("rawTweetAndMetadata array: " + rawTweetAndMetadata);
-      LOG.info("Tweet array size: " + rawTweetAndMetadata.length);
+      
+      if(rawTweetAndMetadata.length < 4) return;
+//      LOG.info("rawTweetAndMetadata array: " + rawTweetAndMetadata);
+//      LOG.info("Tweet array size: " + rawTweetAndMetadata.length);
       
       
-      LOG.info("rawDateTime: string" + rawTweetAndMetadata[1]);
+//      LOG.info("rawDateTime: string" + rawTweetAndMetadata[1]);
       rawDateTime = rawTweetAndMetadata[1].split(" ");
-      LOG.info("rawDateTime: array" + rawDateTime);
+//      LOG.info("******* rawDatTime pre split: '" + rawTweetAndMetadata[1] + "'");
+//      for(String s : rawDateTime){
+//        LOG.info(s);
+//      }
       
-      month = rawDateTime[0].equals("Jan") ? "01" : "02";
+//      LOG.info("rawDateTime: array" + rawDateTime);
+      
+//      LOG.info("******* Month: '" + month + "'");
+      month = rawDateTime[1].contains("Jan") ? "01" : "02";
       day = rawDateTime[2];
       hour = rawDateTime[3].split(":")[0];
 
@@ -127,7 +135,8 @@ public class ExtractHourlyCountsAll extends Configured implements Tool {
     //        Integer.parseInt(cmdline.getOptionValue(NUM_REDUCERS)) : 1;
 
 
-    String inputPath = "/user/shared/tweets2011/tweets2011.txt";
+//    String inputPath = "/user/shared/tweets2011/tweets2011.txt";
+    String inputPath = "tweets2011.txt";
     String outputPath = "imbriano_all_out";
 
     LOG.info("Tool: " + ExtractHourlyCountsAll.class.getSimpleName());
